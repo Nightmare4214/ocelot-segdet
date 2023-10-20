@@ -71,8 +71,10 @@ def get_region_wsi_coordinates(
     original_width, original_height = x2 - x1, y2 - y1
     x1 = convert_pixel_mpp(x1, original_mpp[0], mpp[0], round_int=True)
     y1 = convert_pixel_mpp(y1, original_mpp[1], mpp[1], round_int=True)
-    width = convert_pixel_mpp(original_width, original_mpp[0], mpp[0], round_int=True)
-    height = convert_pixel_mpp(original_height, original_mpp[1], mpp[1], round_int=True)
+    width = convert_pixel_mpp(
+        original_width, original_mpp[0], mpp[0], round_int=True)
+    height = convert_pixel_mpp(
+        original_height, original_mpp[1], mpp[1], round_int=True)
     x2 = x1 + width
     y2 = y1 + height
     return x1, y1, x2, y2
@@ -105,19 +107,24 @@ def cell_scale_crop_in_tissue_at_cell_mpp(
     wsi_mpp = get_wsi_mpp(meta_pair)
 
     # Determine the scaling between mask at tissue MPP vs. cell MPP (make larger)
-    scale_factor_x, scale_factor_y = tissue_mpp[0] / cell_mpp[0], tissue_mpp[1] / cell_mpp[1]
+    scale_factor_x, scale_factor_y = tissue_mpp[0] / \
+        cell_mpp[0], tissue_mpp[1] / cell_mpp[1]
 
     # Get the coordinates of the tissue area at the WSI MPP
-    tissue_wsi_coords = get_region_wsi_coordinates(meta_pair, annot_type='tissue', mpp=None)
+    tissue_wsi_coords = get_region_wsi_coordinates(
+        meta_pair, annot_type='tissue', mpp=None)
 
     # Get scale factor for WSI-MPP to cell MPP
-    wsi_cell_sf_x, wsi_cell_sf_y = wsi_mpp[0] / cell_mpp[0], wsi_mpp[1] / cell_mpp[1]
+    wsi_cell_sf_x, wsi_cell_sf_y = wsi_mpp[0] / \
+        cell_mpp[0], wsi_mpp[1] / cell_mpp[1]
 
     # Scale tissue x1, y1 from WSI MPP to cell MPP
-    tissue_cell_x1, tissue_cell_y1 = tissue_wsi_coords[0] * wsi_cell_sf_x, tissue_wsi_coords[1] * wsi_cell_sf_y
+    tissue_cell_x1, tissue_cell_y1 = tissue_wsi_coords[0] * \
+        wsi_cell_sf_x, tissue_wsi_coords[1] * wsi_cell_sf_y
 
     # Extract the coordinates of the cell box (at cell MPP)
-    cell_coords = get_region_wsi_coordinates(meta_pair, annot_type='cell', mpp=cell_mpp)
+    cell_coords = get_region_wsi_coordinates(
+        meta_pair, annot_type='cell', mpp=cell_mpp)
 
     # Set the crop coordinates relative to tissue_cell_x1/y1
     crop_coords = [int(round(cell_coords[0] - tissue_cell_x1)),

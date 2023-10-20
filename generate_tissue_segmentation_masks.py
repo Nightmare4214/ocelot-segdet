@@ -27,7 +27,7 @@ from util.torch import get_default_device, move_data_to_device
 from util.training import postprocess_outputs
 
 # Data related
-DEFAULT_SPLIT_DIRECTORY = './splits/tissue_model' # _all_train'
+DEFAULT_SPLIT_DIRECTORY = './splits/tissue_model'  # _all_train'
 DEFAULT_MPP = 0.5       # MPP to scale data to
 
 # Inference related
@@ -74,7 +74,7 @@ def parse_args():
                         help='Output crop margin to use', default=DEFAULT_OCM)
 
     # If samples of overlaid annotations should also be extracted
-    parser.add_argument('--extract-overlays', action=argparse.BooleanOptionalAction,
+    parser.add_argument('--extract-overlays', action='store_true',
                         help='Also extract images of annotations overlaid on the images. This will '
                              'output 2x sets of images (both from scaled and cropped versions of '
                              'the tissue images to the equivalent areas in the cell images). '
@@ -96,12 +96,14 @@ def main():
     args = parse_args()
 
     # Load the metadata.json file
-    ocelot_metadata = read_json(os.path.join(args.ocelot_directory, 'metadata.json'))['sample_pairs']
+    ocelot_metadata = read_json(os.path.join(
+        args.ocelot_directory, 'metadata.json'))['sample_pairs']
 
     # Set up output directory (ensuring it is unique to avoid accidental file overwrites)
     out_dir = args.output_directory
     if os.path.isdir(out_dir):
-        raise IsADirectoryError(f'Directory {out_dir} exists. Not writing files!')
+        raise IsADirectoryError(
+            f'Directory {out_dir} exists. Not writing files!')
     create_directory(out_dir)
 
     # Create overlay directory (if extracting overlays)
@@ -122,7 +124,8 @@ def main():
     for split_filename in ('train.txt', 'val.txt'):
         if os.path.isfile(os.path.join(args.split_directory, split_filename)):
             dataset = TissueDataset(
-                args.data_directory, os.path.join(args.split_directory, split_filename),
+                args.data_directory, os.path.join(
+                    args.split_directory, split_filename),
                 transforms=None, samples_per_region=1, tile_size=(512, 512),
                 output_crop_margin=args.ocm, scale_to_mpp=mpp, pad_class_name='Background')
             dataloader = DataLoader(
@@ -130,7 +133,8 @@ def main():
                 collate_fn=None, drop_last=False)
             dataloaders.append(dataloader)
     if len(dataloaders) == 0:
-        raise RuntimeError(f'No dataloaders created. Ensure \'train.txt\' or \'val.txt\' exists.')
+        raise RuntimeError(
+            f'No dataloaders created. Ensure \'train.txt\' or \'val.txt\' exists.')
 
     # Set up model
     model = SegFormer(num_classes=len(TISSUE_CLASSES), size=args.segformer_size, pretrained=False,
@@ -165,7 +169,8 @@ def generate_store_segmentation_masks(model, postprocessors, dataloader, device,
     progress = tqdm(dataloader)
     for batch_idx, batch in enumerate(progress):
         # ################################ STORES RELATING TO BATCH ################################
-        last_batch = batch_idx == len(dataloader) - 1          # Whether this is the last batch
+        # Whether this is the last batch
+        last_batch = batch_idx == len(dataloader) - 1
 
         # ################################ SET UP REGION DATA STORE ################################
         # Determine the number of samples based on the expected input_path key
@@ -191,10 +196,12 @@ def generate_store_segmentation_masks(model, postprocessors, dataloader, device,
             if isinstance(output_coordinates, torch.Tensor):
                 output_coordinates = output_coordinates.cpu().numpy()
             output_coordinates = output_coordinates.tolist()
-            region_data_store[input_path]['prediction_coords'].append(output_coordinates)
+            region_data_store[input_path]['prediction_coords'].append(
+                output_coordinates)
 
         # Put required data onto GPU
-        model_inputs = {key: move_data_to_device(batch[key], device) for key in model_input_keys}
+        model_inputs = {key: move_data_to_device(
+            batch[key], device) for key in model_input_keys}
 
         # Perform forward pass
         with torch.no_grad():
@@ -223,7 +230,8 @@ def generate_store_segmentation_masks(model, postprocessors, dataloader, device,
                 region_data['dimensions'])
 
             # Perform postprocessing on outputs
-            complete_prediction = postprocess_outputs(complete_prediction, postprocessors)
+            complete_prediction = postprocess_outputs(
+                complete_prediction, postprocessors)
 
             # Extract and store the softmaxed cancer area mask
             extract_store_softmasked_cancer_mask(
@@ -250,8 +258,10 @@ def extract_store_softmasked_cancer_mask(complete_prediction, image_id, mask_mpp
         meta_pair=image_metadata, tissue_mpp=mask_mpp, cell_mpp=None)
 
     # Scale the mask
-    new_w, new_h = int(round(cancer_area_hm.shape[1] * sf_x)), int(round(cancer_area_hm.shape[0] * sf_y))
-    cancer_area_hm = cv2.resize(cancer_area_hm, (new_w, new_h), interpolation=cv2.INTER_AREA)
+    new_w, new_h = int(round(
+        cancer_area_hm.shape[1] * sf_x)), int(round(cancer_area_hm.shape[0] * sf_y))
+    cancer_area_hm = cv2.resize(
+        cancer_area_hm, (new_w, new_h), interpolation=cv2.INTER_AREA)
 
     # Crop the scaled mask
     cancer_area_hm = crop_image(cancer_area_hm, crop_info)
@@ -266,31 +276,38 @@ def extract_store_softmasked_cancer_mask(complete_prediction, image_id, mask_mpp
     tif_profile['height'] = cancer_area_hm.shape[0]
     tif_profile['dtype'] = np.float32
     write_tif_rasterio(
-        os.path.join(output_directory, f'{image_id}_ca_hm.tif'), cancer_area_hm, tif_profile,
+        os.path.join(output_directory,
+                     f'{image_id}_ca_hm.tif'), cancer_area_hm, tif_profile,
         overwrite=True, pyramid_factors=[2, 4, 8], resampling=Resampling.average)
 
     # Also overlay the mask on the original image if requested
     if extract_overlays:
         # ### Argmaxed colours ###
         # Load the image (at original MPP)
-        tissue_image, _ = load_tif_rasterio(os.path.join(data_directory, rel_image_path))
+        tissue_image, _ = load_tif_rasterio(
+            os.path.join(data_directory, rel_image_path))
         # Determine how to scale and crop the original image to cell area
         (sf_x_im, sf_y_im), crop_info_im = cell_scale_crop_in_tissue_at_cell_mpp(
             meta_pair=image_metadata, tissue_mpp=None, cell_mpp=None)
-        new_w_im, new_h_im = int(round(tissue_image.shape[1] * sf_x_im)), int(round(tissue_image.shape[0] * sf_y_im))
+        new_w_im, new_h_im = int(round(
+            tissue_image.shape[1] * sf_x_im)), int(round(tissue_image.shape[0] * sf_y_im))
         # Scale and crop the image (to get equivalent cell area)
-        tissue_image = cv2.resize(tissue_image, (new_w_im, new_h_im), interpolation=cv2.INTER_AREA)
+        tissue_image = cv2.resize(
+            tissue_image, (new_w_im, new_h_im), interpolation=cv2.INTER_AREA)
         tissue_image = crop_image(tissue_image, crop_info_im)
         # Take argmax of original mask and find equivalent area
-        am_seg_mask = torch.argmax(complete_prediction[SEG_MASK_PROB_KEY], dim=0).detach().cpu().numpy().astype(np.uint8)
-        am_seg_mask = cv2.resize(am_seg_mask, (new_w, new_h), interpolation=cv2.INTER_AREA)
+        am_seg_mask = torch.argmax(complete_prediction[SEG_MASK_PROB_KEY], dim=0).detach(
+        ).cpu().numpy().astype(np.uint8)
+        am_seg_mask = cv2.resize(
+            am_seg_mask, (new_w, new_h), interpolation=cv2.INTER_AREA)
         am_seg_mask = crop_image(am_seg_mask, crop_info)
         # Generate RGB mask
         tissue_am_overlay = np.zeros_like(tissue_image)
         for cls_idx, cls_colour in enumerate(TISSUE_CLASS_COLOURS):
             tissue_am_overlay[am_seg_mask == cls_idx] = cls_colour
         # Blend with original image
-        tissue_am_overlay = overlay_images(tissue_image, tissue_am_overlay, 0.25)
+        tissue_am_overlay = overlay_images(
+            tissue_image, tissue_am_overlay, 0.25)
         # Write to disk
         write_image(os.path.join(output_directory, 'overlays', f'{image_id}_ca_am.jpg'),
                     tissue_am_overlay, overwrite=True)

@@ -112,7 +112,8 @@ def batched_point_nms(
     if not class_agnostic:
         for class_id in torch.unique(idxs):
             curr_indices = torch.where(idxs == class_id)[0]
-            curr_keep_indices = point_nms(points[curr_indices], scores[curr_indices], euc_dist_threshold)
+            curr_keep_indices = point_nms(
+                points[curr_indices], scores[curr_indices], euc_dist_threshold)
             keep_mask[curr_indices[curr_keep_indices]] = True
     else:
         curr_keep_indices = point_nms(points, scores, euc_dist_threshold)

@@ -79,7 +79,8 @@ class OcelotDataset(Dataset):
         if transforms is None:
             self.transform = A.Compose(standard_transforms, **transform_params)
         else:
-            self.transform = A.Compose([*transforms, *standard_transforms], **transform_params)
+            self.transform = A.Compose(
+                [*transforms, *standard_transforms], **transform_params)
 
         # Set up store of annotation metadata
         self.all_region_data, self.num_unique_images = self._load_from_split()
@@ -110,7 +111,8 @@ class OcelotDataset(Dataset):
         for metadata in all_metadata:
             region_data = metadata[self.dataset_type]
             region_data['id'] = metadata['id']
-            region_data['original_dimensions'] = np.asarray(region_data['dimensions'])
+            region_data['original_dimensions'] = np.asarray(
+                region_data['dimensions'])
 
             # If scaling, store the scaled region dimensions
             if self.scale_to_mpp is not None:
@@ -157,8 +159,10 @@ class OcelotDataset(Dataset):
             coords_to_tile = [0, 0, *region_data['dimensions']]
 
             # Generate the tiles (returns a list of numpy arrays)
-            output_size = calculate_cropped_size(self.tile_size, self.output_crop_margin)
-            all_tiles = generate_tiles(coords_to_tile, self.tile_size, output_size)
+            output_size = calculate_cropped_size(
+                self.tile_size, self.output_crop_margin)
+            all_tiles = generate_tiles(
+                coords_to_tile, self.tile_size, output_size)
 
             # Append each tile to the tiled_region_data list
             for tile in all_tiles:
@@ -211,7 +215,8 @@ class OcelotDataset(Dataset):
         # If output_crop_margin specified, output coords should be centre cropped to output_size
         if self.output_crop_margin is not None:
             output_height, output_width = \
-                calculate_cropped_size((input_height, input_width), self.output_crop_margin)
+                calculate_cropped_size(
+                    (input_height, input_width), self.output_crop_margin)
             # Determine top/left coordinate of output
             output_x1 = int(round((input_width - output_width) / 2))
             output_y1 = int(round((input_height - output_height) / 2))
@@ -247,5 +252,6 @@ class OcelotDataset(Dataset):
             region_data = next(dat for dat in self.all_region_data
                                if dat['image_path'] == input_path)
         except StopIteration:
-            raise RuntimeError(f'Could not find data corresponding to input path {input_path}')
+            raise RuntimeError(
+                f'Could not find data corresponding to input path {input_path}')
         return region_data

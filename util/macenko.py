@@ -142,7 +142,8 @@ def calculate_concentrations(
     # peak memory requirements).
     C = np.empty((HE.shape[1], Y.shape[1]), dtype=np.float32)
     for i in range(0, C.shape[1], chunk_size):
-        C[:, i:i+chunk_size], _, rank_i, _ = np.linalg.lstsq(HE, Y[:, i:i+chunk_size], rcond=-1)
+        C[:, i:i+chunk_size], _, rank_i, _ = np.linalg.lstsq(
+            HE, Y[:, i:i+chunk_size], rcond=-1)
         # Ensure the rank is 2 (otherwise normalisation has failed)
         if rank_i != 2:
             raise RuntimeError(
@@ -262,7 +263,8 @@ def normalise_he_image_(
     """
     # Validate ret_img
     if ret_img not in ('HE', 'H', 'E'):
-        raise ValueError(f'ret_img should be: \'HE\', \'H\' or \'E\'. Is: {ret_img}')
+        raise ValueError(
+            f'ret_img should be: \'HE\', \'H\' or \'E\'. Is: {ret_img}')
 
     # Validate HE/max_C
     if (HE is not None and max_C is None) or (HE is None and max_C is not None):
@@ -283,7 +285,8 @@ def normalise_he_image_(
     # Support pre-computed HE
     if HE is None:
         # Steps 2--7: Compute HE matrix
-        HE = calculate_he_matrix(OD, alpha=alpha, beta=beta, chunk_size=chunk_size)
+        HE = calculate_he_matrix(
+            OD, alpha=alpha, beta=beta, chunk_size=chunk_size)
 
     # Determine concentrations of the individual stains
     C = calculate_concentrations(OD, HE, chunk_size=chunk_size)

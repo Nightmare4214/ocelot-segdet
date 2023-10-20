@@ -62,7 +62,8 @@ def train_model(model, optimiser, train_loader, val_loader, device, num_epochs,
     """
     # Ensure valid validation_behaviour
     if validation_behaviour not in ('single', 'reconstruct'):
-        raise ValueError(f'Validation behaviour {validation_behaviour} not supported.')
+        raise ValueError(
+            f'Validation behaviour {validation_behaviour} not supported.')
 
     # Setup whether metrics/loss is also computed for training/validation
     train_metrics_object = None if metrics_val_only else metrics_object
@@ -94,7 +95,8 @@ def train_model(model, optimiser, train_loader, val_loader, device, num_epochs,
 
         if output_directory is not None:
             # Save the model state
-            model_latest_path = os.path.join(output_directory, f'model-latest.pth')
+            model_latest_path = os.path.join(
+                output_directory, f'model-latest.pth')
             save_model_state(model_latest_path, model, epoch_num=epoch_num, optimiser=optimiser,
                              scheduler=scheduler)
 
@@ -146,7 +148,8 @@ def train_epoch(model, optimiser, loader, device, epoch_num, criterion_object=No
         batch_gpu_data = {}
 
         # Extract required inputs for the model from the batch (and move onto device)
-        model_inputs = {key: move_data_to_device(batch[key], device) for key in model_input_keys}
+        model_inputs = {key: move_data_to_device(
+            batch[key], device) for key in model_input_keys}
 
         # Update the store of data on the GPU
         batch_gpu_data.update(model_inputs)
@@ -165,7 +168,8 @@ def train_epoch(model, optimiser, loader, device, epoch_num, criterion_object=No
                                f'for the criterion. Missing keys: {missing_keys}')
 
         # Extract required model outputs for criterion object
-        criterion_model_output = {key: model_outputs[key] for key in criterion_keys}
+        criterion_model_output = {
+            key: model_outputs[key] for key in criterion_keys}
 
         # Extract required ground truth for criterion class (put onto device as required)
         criterion_ground_truth = {}
@@ -173,11 +177,13 @@ def train_epoch(model, optimiser, loader, device, epoch_num, criterion_object=No
             if key in batch_gpu_data:
                 criterion_ground_truth[key] = batch_gpu_data[key]
             else:
-                criterion_ground_truth[key] = move_data_to_device(batch[key], device)
+                criterion_ground_truth[key] = move_data_to_device(
+                    batch[key], device)
                 batch_gpu_data[key] = criterion_ground_truth[key]
 
         # Compute the loss
-        loss = criterion_object.compute(criterion_model_output, criterion_ground_truth)
+        loss = criterion_object.compute(
+            criterion_model_output, criterion_ground_truth)
 
         # Sum up losses (in case multiple losses returned)
         total_loss = sum(loss_value for loss_value in loss.values())
@@ -192,7 +198,8 @@ def train_epoch(model, optimiser, loader, device, epoch_num, criterion_object=No
         if metrics_object is not None:
             # Perform any postprocessing on outputs
             if model_outputs is not None:
-                model_outputs = postprocess_outputs(model_outputs, postprocessors)
+                model_outputs = postprocess_outputs(
+                    model_outputs, postprocessors)
 
             # Extract required model outputs for metrics class
             metrics_model_output = {key: move_data_to_device(model_outputs[key], device)
@@ -204,11 +211,13 @@ def train_epoch(model, optimiser, loader, device, epoch_num, criterion_object=No
                 if key in batch_gpu_data:
                     metrics_ground_truth[key] = batch_gpu_data[key]
                 else:
-                    metrics_ground_truth[key] = move_data_to_device(batch[key], device)
+                    metrics_ground_truth[key] = move_data_to_device(
+                        batch[key], device)
                     batch_gpu_data[key] = metrics_ground_truth[key]
 
             # Update the metrics object with data from this batch
-            running_metrics = metrics_object.update(metrics_model_output, metrics_ground_truth)
+            running_metrics = metrics_object.update(
+                metrics_model_output, metrics_ground_truth)
         else:
             running_metrics = None
 
@@ -265,7 +274,8 @@ def train_epoch(model, optimiser, loader, device, epoch_num, criterion_object=No
         logger.write_dict(data_to_log)
 
     return {loss_name: loss_meter.get_mean() for loss_name, loss_meter in epoch_losses.items()}, \
-           {metric_name: metric_value for metric_name, metric_value in epoch_metrics.items()}, current_lr
+           {metric_name: metric_value for metric_name,
+               metric_value in epoch_metrics.items()}, current_lr
 
 
 def eval_epoch(model, loader, device, epoch_num=0, criterion_object=None, metrics_object=None,
@@ -343,13 +353,15 @@ def eval_epoch(model, loader, device, epoch_num=0, criterion_object=None, metric
                 if isinstance(output_coordinates, torch.Tensor):
                     output_coordinates = output_coordinates.cpu().numpy()
                 output_coordinates = output_coordinates.tolist()
-                region_data_store[input_path]['output_coords'].append(output_coordinates)
+                region_data_store[input_path]['output_coords'].append(
+                    output_coordinates)
 
         # Create a store of all data put onto the GPU for this batch (to not duplicate GPU data)
         batch_gpu_data = {}
 
         # Extract required inputs for the model from the batch (and move onto device)
-        model_inputs = {key: move_data_to_device(batch[key], device) for key in model_input_keys}
+        model_inputs = {key: move_data_to_device(
+            batch[key], device) for key in model_input_keys}
 
         # Update the store of data on the GPU
         batch_gpu_data.update(model_inputs)
@@ -369,11 +381,13 @@ def eval_epoch(model, loader, device, epoch_num=0, criterion_object=None, metric
                 if key in batch_gpu_data:
                     criterion_ground_truth[key] = batch_gpu_data[key]
                 else:
-                    criterion_ground_truth[key] = move_data_to_device(batch[key], device)
+                    criterion_ground_truth[key] = move_data_to_device(
+                        batch[key], device)
                     batch_gpu_data[key] = criterion_ground_truth[key]
 
             # Compute the loss
-            loss = criterion_object.compute(criterion_model_output, criterion_ground_truth)
+            loss = criterion_object.compute(
+                criterion_model_output, criterion_ground_truth)
 
         # Update metrics with results from batch (call update() method on metric object)
         running_metrics = None
@@ -385,7 +399,8 @@ def eval_epoch(model, loader, device, epoch_num=0, criterion_object=None, metric
             if not reconstruct_output:
                 # Perform any postprocessing on outputs
                 # Since we are not reconstructing output, we do not collate outputs first
-                model_outputs = postprocess_outputs(model_outputs, postprocessors)
+                model_outputs = postprocess_outputs(
+                    model_outputs, postprocessors)
 
                 # Extract required model outputs for metrics class
                 metrics_model_output = {key: model_outputs[key]
@@ -394,10 +409,12 @@ def eval_epoch(model, loader, device, epoch_num=0, criterion_object=None, metric
                 # Extract required ground truth for metrics class (put onto device as required)
                 metrics_ground_truth = {}
                 for key in metrics_object.ground_truth_keys:
-                    metrics_ground_truth[key] = move_data_to_device(batch[key], torch.device('cpu'))
+                    metrics_ground_truth[key] = move_data_to_device(
+                        batch[key], torch.device('cpu'))
 
                 # Update the metrics object with data from this batch
-                running_metrics = metrics_object.update(metrics_model_output, metrics_ground_truth)
+                running_metrics = metrics_object.update(
+                    metrics_model_output, metrics_ground_truth)
             else:
                 # Update the store with output predictions
                 for sample_idx in range(num_samples):
@@ -426,7 +443,8 @@ def eval_epoch(model, loader, device, epoch_num=0, criterion_object=None, metric
 
                     # Perform any postprocessing on outputs
                     # Since we are reconstructing output, this must happen *after* collation
-                    complete_output = postprocess_outputs(complete_output, postprocessors)
+                    complete_output = postprocess_outputs(
+                        complete_output, postprocessors)
 
                     # Extract the ground truth/model output that the metric class requires
                     # IMPORTANT: Given this is reconstructed, we force the ground truth to be on
@@ -439,17 +457,22 @@ def eval_epoch(model, loader, device, epoch_num=0, criterion_object=None, metric
                     # Given we are updating output-by-output, create a 'batch' dimension
                     for key in metrics_ground_truth:
                         if isinstance(metrics_ground_truth[key], torch.Tensor):
-                            metrics_ground_truth[key] = metrics_ground_truth[key].unsqueeze(0)
+                            metrics_ground_truth[key] = metrics_ground_truth[key].unsqueeze(
+                                0)
                         else:
-                            metrics_ground_truth[key] = [metrics_ground_truth[key]]
+                            metrics_ground_truth[key] = [
+                                metrics_ground_truth[key]]
                     for key in metrics_model_output:
                         if isinstance(metrics_model_output[key], torch.Tensor):
-                            metrics_model_output[key] = metrics_model_output[key].unsqueeze(0)
+                            metrics_model_output[key] = metrics_model_output[key].unsqueeze(
+                                0)
                         else:
-                            metrics_model_output[key] = [metrics_model_output[key]]
+                            metrics_model_output[key] = [
+                                metrics_model_output[key]]
 
                     # Update metrics object
-                    running_metrics = metrics_object.update(metrics_model_output, metrics_ground_truth)
+                    running_metrics = metrics_object.update(
+                        metrics_model_output, metrics_ground_truth)
 
                     # Stop iteration if this was triggered due to the last batch
                     if len(loaded_region_paths) == 0 and last_batch:
@@ -474,7 +497,8 @@ def eval_epoch(model, loader, device, epoch_num=0, criterion_object=None, metric
             progress_str = ' - ' + ', '.join(
                 [f'{metric_name}: ' + (f'{metric_value:.4f}' if metric_value is not None else 'None')
                  for metric_name, metric_value in running_metrics.items()])
-            progress.set_description(f'Epoch {epoch_num}: Evaluating{progress_str[:40]}')
+            progress.set_description(
+                f'Epoch {epoch_num}: Evaluating{progress_str[:40]}')
 
     # Get the whole epoch metrics, call write(), then reset the metrics object
     if metrics_object is not None:
@@ -493,7 +517,8 @@ def eval_epoch(model, loader, device, epoch_num=0, criterion_object=None, metric
         logger.write_dict(data_to_log)
 
     return {loss_name: loss_meter.get_mean() for loss_name, loss_meter in epoch_losses.items()}, \
-           {metric_name: metric_value for metric_name, metric_value in epoch_metrics.items()}
+           {metric_name: metric_value for metric_name,
+               metric_value in epoch_metrics.items()}
 
 
 def postprocess_outputs(

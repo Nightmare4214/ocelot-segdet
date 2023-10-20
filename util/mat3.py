@@ -17,7 +17,7 @@ def affine(A=None, t=None):
 
 def rotate(theta):
     """Rotate counter-clockwise."""
-    return affine(A=[[ np.cos(theta), np.sin(theta)],
+    return affine(A=[[np.cos(theta), np.sin(theta)],
                      [-np.sin(theta), np.cos(theta)]])
 
 
@@ -36,9 +36,10 @@ def rotate_around(rx, ry, theta):
 
 def scale(sx, sy=None):
     """Scale."""
-    if sy is None: sy = sx
+    if sy is None:
+        sy = sx
     return affine(A=[[sx,  0],
-                     [ 0, sy]])
+                     [0, sy]])
 
 
 def scale_around(srx, sry, sx, sy=None):

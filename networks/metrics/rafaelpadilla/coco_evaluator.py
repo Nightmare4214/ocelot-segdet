@@ -237,8 +237,10 @@ def _evaluate_image_points(dt, gt, eucs, distance_threshold, max_dets=None, area
     ]
 
     # get score for non-ignored dts
-    scores = [dt[d_idx].get_confidence() for d_idx in range(len(dt)) if not dt_ignore[d_idx]]
-    matched = [d_idx in dtm for d_idx in range(len(dt)) if not dt_ignore[d_idx]]
+    scores = [dt[d_idx].get_confidence()
+              for d_idx in range(len(dt)) if not dt_ignore[d_idx]]
+    matched = [d_idx in dtm for d_idx in range(
+        len(dt)) if not dt_ignore[d_idx]]
 
     n_gts = len([g_idx for g_idx in range(len(gt)) if not gt_ignore[g_idx]])
     return {"scores": scores, "matched": matched, "NP": n_gts}

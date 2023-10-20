@@ -42,7 +42,7 @@ def parse_args():
                         help='Which images to apply Macenko normalisation to.', default=['tissue'])
 
     # If samples of overlaid annotations should also be extracted
-    parser.add_argument('--extract-overlays', action=argparse.BooleanOptionalAction,
+    parser.add_argument('--extract-overlays', action='store_true',
                         help='Also extract images of annotations overlaid on the images.',
                         default=False)
 
@@ -62,15 +62,20 @@ def main():
     check_valid_ocelot_directory(ocelot_dir)
 
     # Find the set of images to be processed
-    ocelot_id_list = get_ocelot_file_ids(os.path.join(ocelot_dir, 'annotations'))
+    ocelot_id_list = get_ocelot_file_ids(
+        os.path.join(ocelot_dir, 'annotations'))
     ocelot_id_list.sort()
 
     # Set up directory names to store processed data in
     image_directory = os.path.join(out_dir, 'images')           # Image data
-    tissue_seg_directory = os.path.join(out_dir, 'tissue_seg')  # Tissue annotations
-    cell_det_directory = os.path.join(out_dir, 'cells')         # Cell detections
-    metadata_directory = os.path.join(out_dir, 'metadata')      # Metadata per-case
-    overlays_directory = os.path.join(out_dir, 'overlays')      # Overlays (if generating)
+    tissue_seg_directory = os.path.join(
+        out_dir, 'tissue_seg')  # Tissue annotations
+    cell_det_directory = os.path.join(
+        out_dir, 'cells')         # Cell detections
+    metadata_directory = os.path.join(
+        out_dir, 'metadata')      # Metadata per-case
+    overlays_directory = os.path.join(
+        out_dir, 'overlays')      # Overlays (if generating)
 
     # Ensure all directories exist
     create_directory(out_dir)
@@ -82,7 +87,8 @@ def main():
         create_directory(overlays_directory)
 
     # Load the metadata.json file
-    ocelot_metadata = read_json(os.path.join(ocelot_dir, 'metadata.json'))['sample_pairs']
+    ocelot_metadata = read_json(os.path.join(
+        ocelot_dir, 'metadata.json'))['sample_pairs']
 
     # Iterate through all IDs and preprocess their data
     progress = tqdm(ocelot_id_list)
@@ -93,7 +99,8 @@ def main():
         ocelot_case_metadata = ocelot_metadata[im_id]
 
         # Set paths to store processed image and annotation data
-        tissue_image_path = os.path.join(image_directory, f'{im_id}_tissue.tif')
+        tissue_image_path = os.path.join(
+            image_directory, f'{im_id}_tissue.tif')
         tissue_gt_path = os.path.join(tissue_seg_directory, f'{im_id}.tif')
         cell_image_path = os.path.join(image_directory, f'{im_id}_cell.tif')
         metadata_path = os.path.join(metadata_directory, f'{im_id}.pkl')
@@ -116,18 +123,22 @@ def main():
         }
 
         # Get reference to paths of the image and annotation data
-        image_paths = get_image_paths(os.path.join(ocelot_dir, 'images'), im_id)
-        annotation_paths = get_annotation_paths(os.path.join(ocelot_dir, 'annotations'), im_id)
+        image_paths = get_image_paths(
+            os.path.join(ocelot_dir, 'images'), im_id)
+        annotation_paths = get_annotation_paths(
+            os.path.join(ocelot_dir, 'annotations'), im_id)
 
         # ### Store 'tissue' image ###
         # Load the tissue image
         tissue_image = load_image(image_paths['tissue'])
-        case_info['tissue']['dimensions'] = [tissue_image.shape[1], tissue_image.shape[0]]
+        case_info['tissue']['dimensions'] = [
+            tissue_image.shape[1], tissue_image.shape[0]]
 
         # Perform Macenko normalisation (if requested)
         if 'tissue' in args.macenko:
             tissue_mask = get_tissue_mask(tissue_image)
-            tissue_image = macenko.normalise_he_image(tissue_image, mask=tissue_mask)
+            tissue_image = macenko.normalise_he_image(
+                tissue_image, mask=tissue_mask)
 
         # Write the tissue image
         tif_profile = DEFAULT_TIF_PROFILE.copy()
@@ -166,7 +177,8 @@ def main():
 
         # ### Store 'tissue' annotations overlaid on image (if requested) ###
         if args.extract_overlays:
-            tissue_overlay_path = os.path.join(overlays_directory, f'{im_id}_tissue.jpg')
+            tissue_overlay_path = os.path.join(
+                overlays_directory, f'{im_id}_tissue.jpg')
             # Generate RGB mask
             tissue_overlay = np.zeros_like(tissue_image)
             for cls_idx, cls_colour in enumerate(TISSUE_CLASS_COLOURS):
@@ -178,7 +190,8 @@ def main():
         # ### Store 'cell' image ###
         # Load the cell image
         cell_image = load_image(image_paths['cell'])
-        case_info['cell']['dimensions'] = [cell_image.shape[1], cell_image.shape[0]]
+        case_info['cell']['dimensions'] = [
+            cell_image.shape[1], cell_image.shape[0]]
 
         # Perform Macenko normalisation (if requested)
         if 'cell' in args.macenko:
@@ -194,7 +207,8 @@ def main():
                            pyramid_factors=TIF_PYRAMID_FACTORS, resampling=Resampling.average)
 
         # ### Store 'cell' annotations ###
-        cell_annotations = {}       # Mapping from class name to [(x, y), ...] coordinates
+        # Mapping from class name to [(x, y), ...] coordinates
+        cell_annotations = {}
 
         # Load the cell annotations file
         with open(annotation_paths['cell'], 'r') as csv_file:
@@ -217,14 +231,16 @@ def main():
             cell_gt_directory = os.path.join(cell_det_directory, name)
             create_directory(cell_gt_directory)
             cell_gt_path = os.path.join(cell_gt_directory, f'{im_id}.npy')
-            case_info['cell']['gt_path'][name] = to_relpath(cell_gt_path, out_dir)
+            case_info['cell']['gt_path'][name] = to_relpath(
+                cell_gt_path, out_dir)
 
             # Write to numpy array
             np.save(cell_gt_path, cell_annotations[name])
 
         # ### Store 'cell' annotations overlaid on image (if requested) ###
         if args.extract_overlays:
-            cell_overlay_path = os.path.join(overlays_directory, f'{im_id}_cell.jpg')
+            cell_overlay_path = os.path.join(
+                overlays_directory, f'{im_id}_cell.jpg')
 
             # Overlay points
             cell_overlay = cell_image.copy()
@@ -242,7 +258,8 @@ def check_valid_ocelot_directory(directory: str):
     """Checks the directory contains annotations/, images/, and metadata.json
     """
     if not os.path.isdir(os.path.join(directory, 'annotations')):
-        raise ValueError(f'Could not find annotations directory in \'{directory}\'')
+        raise ValueError(
+            f'Could not find annotations directory in \'{directory}\'')
     if not os.path.isdir(os.path.join(directory, 'images')):
         raise ValueError(f'Could not find images directory in \'{directory}\'')
     if not os.path.isfile(os.path.join(directory, 'metadata.json')):
@@ -309,7 +326,8 @@ def determine_ocelot_path_type(path):
     annot_type = 'cell' if os.path.dirname(path).endswith('cell') else 'tissue' \
         if os.path.dirname(path).endswith('tissue') else None
     if annot_type is None:
-        raise RuntimeError(f'Could not determine if cell or tissue data from {path}.')
+        raise RuntimeError(
+            f'Could not determine if cell or tissue data from {path}.')
     return annot_type
 
 

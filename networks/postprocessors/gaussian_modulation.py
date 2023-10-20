@@ -39,10 +39,12 @@ class GaussianModulation(Postprocessor):
         if blurred_heatmap.ndim == 4:       # Batched
             for b_idx in range(scaled_heatmap.shape[0]):
                 for c_idx in range(scaled_heatmap.shape[1]):
-                    scaled_heatmap[b_idx, c_idx] = scale_heatmap(blurred_heatmap[b_idx, c_idx], heatmap[b_idx, c_idx])
+                    scaled_heatmap[b_idx, c_idx] = scale_heatmap(
+                        blurred_heatmap[b_idx, c_idx], heatmap[b_idx, c_idx])
         else:
             for c_idx in range(scaled_heatmap.shape[0]):
-                scaled_heatmap[c_idx] = scale_heatmap(blurred_heatmap[c_idx], heatmap[c_idx])
+                scaled_heatmap[c_idx] = scale_heatmap(
+                    blurred_heatmap[c_idx], heatmap[c_idx])
 
         return {
             **outputs,

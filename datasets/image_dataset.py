@@ -61,18 +61,21 @@ class ImageDataset(Dataset):
             self.base_dimensions, self.image_mpp, self.required_mpp, round_int=True)
 
         # Given image data is small, resize ahead of time to required_dimensions
-        self.resized_image = cv2.resize(image, self.required_dimensions, interpolation=cv2.INTER_AREA)
+        self.resized_image = cv2.resize(
+            image, self.required_dimensions, interpolation=cv2.INTER_AREA)
         if self.input_seg_mask is not None:
             # Incoming as: (C, H, W). Change to: (H, W, C)
             self.input_seg_mask = np.transpose(self.input_seg_mask, (1, 2, 0))
 
             # Only resize if different MPP
             if self.input_seg_mask.shape[1] != self.required_dimensions[0] or self.input_seg_mask.shape[0] != self.required_dimensions[1]:
-                self.resized_input_seg_mask = cv2.resize(self.input_seg_mask, self.required_dimensions, interpolation=cv2.INTER_AREA)
+                self.resized_input_seg_mask = cv2.resize(
+                    self.input_seg_mask, self.required_dimensions, interpolation=cv2.INTER_AREA)
                 # cv2 resize will drop channel dimension if there is only 1 axis in the 'channels'
                 # dimension. Here we add it back in to get (H, W, C)
                 if self.input_seg_mask.ndim == 3 and self.input_seg_mask.shape[2] == 1 and self.resized_input_seg_mask.ndim == 2:
-                    self.resized_input_seg_mask = np.expand_dims(self.resized_input_seg_mask, axis=2)
+                    self.resized_input_seg_mask = np.expand_dims(
+                        self.resized_input_seg_mask, axis=2)
             else:
                 self.resized_input_seg_mask = self.input_seg_mask
         else:
@@ -91,23 +94,28 @@ class ImageDataset(Dataset):
         req_tile = self.required_tiles[idx]
 
         # Crop from the resized image (pad with black if out of image bounds)
-        tile_crop = crop_image(self.resized_image, req_tile, allow_pad=True, pad_fill_value=0)
+        tile_crop = crop_image(self.resized_image, req_tile,
+                               allow_pad=True, pad_fill_value=0)
 
         # Apply Macenko normalisation
         if self.macenko_params is not None:
             tile_tissue_mask = get_tissue_mask(tile_crop)
-            tile_crop = macenko.normalise_he_image(tile_crop, mask=tile_tissue_mask, **self.macenko_params)
+            tile_crop = macenko.normalise_he_image(
+                tile_crop, mask=tile_tissue_mask, **self.macenko_params)
 
         extra_return_kwargs = {}
         extra_tx_kwargs = {}
         if self.resized_input_seg_mask is not None:
             # Extract (H, W, C) masks into [(H, W), ... xC]
             # We pad with 0's (representing 0 probability)
-            seg_crop = crop_image(self.resized_input_seg_mask, req_tile, allow_pad=True, pad_fill_value=0)
-            extra_tx_kwargs['masks'] = [seg_crop[:, :, i] for i in range(seg_crop.shape[2])]
+            seg_crop = crop_image(
+                self.resized_input_seg_mask, req_tile, allow_pad=True, pad_fill_value=0)
+            extra_tx_kwargs['masks'] = [seg_crop[:, :, i]
+                                        for i in range(seg_crop.shape[2])]
 
         # Apply ToTensor transform
-        transformed = self.to_tensor_transform(image=tile_crop, **extra_tx_kwargs)
+        transformed = self.to_tensor_transform(
+            image=tile_crop, **extra_tx_kwargs)
         tile_crop = transformed['image']
         if self.resized_input_seg_mask is not None:
             data_to_cat = [tile_crop]
@@ -116,7 +124,8 @@ class ImageDataset(Dataset):
                 seg_crop = torch.stack(seg_crop, dim=0)
                 extra_return_kwargs[INPUT_MASK_PROB_KEY] = seg_crop
                 data_to_cat.append(seg_crop)
-            extra_return_kwargs[INPUT_IMAGE_MASK_KEY] = torch.cat(data_to_cat, dim=0)
+            extra_return_kwargs[INPUT_IMAGE_MASK_KEY] = torch.cat(
+                data_to_cat, dim=0)
 
         # Return data
         return {
@@ -163,7 +172,8 @@ class ImageDataset(Dataset):
 
         # If output_crop_margin specified, output coords should be centre cropped to output_size
         if output_crop_margin is not None:
-            output_height, output_width = calculate_cropped_size((input_height, input_width), output_crop_margin)
+            output_height, output_width = calculate_cropped_size(
+                (input_height, input_width), output_crop_margin)
 
             # Determine top/left coordinate of output
             output_x1 = int(round((input_width - output_width) / 2))

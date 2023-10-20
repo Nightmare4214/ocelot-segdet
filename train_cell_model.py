@@ -45,7 +45,7 @@ DEFAULT_VAL_FREQ = 2
 DEFAULT_VAL_BEHAVIOUR = 'reconstruct'
 
 # Data related
-DEFAULT_SPLIT_DIRECTORY = './splits/cell_model' # _all_train'
+DEFAULT_SPLIT_DIRECTORY = './splits/cell_model'  # _all_train'
 DEFAULT_MPP = 0.2       # MPP to scale data to
 
 # Output crop margins
@@ -114,14 +114,14 @@ def parse_args():
     # Model configuration
     parser.add_argument('--segformer-size', type=str, help='Size of SegFormer model',
                         choices=['b0', 'b1', 'b2', 'b3', 'b4', 'b5'], default=DEFAULT_SEGFORMER_SIZE)
-    parser.add_argument('--segformer-pretrained', type=argparse.BooleanOptionalAction,
+    parser.add_argument('--segformer-pretrained', action='store_true',
                         help='Use ImageNet pre-trained weights for SegFormer',
                         default=DEFAULT_SEGFORMER_PRETRAINED)
 
     # Other options
-    parser.add_argument('--compute-train-metrics', action=argparse.BooleanOptionalAction,
+    parser.add_argument('--compute-train-metrics', action='store_true',
                         help='Compute metrics on training set', default=True)
-    parser.add_argument('--compute-val-loss', action=argparse.BooleanOptionalAction,
+    parser.add_argument('--compute-val-loss', action='store_true',
                         help='Compute loss on validation set', default=True)
 
     # Output directory to store model metrics and weights
@@ -185,7 +185,8 @@ def main():
 
     # Set up postprocessors
     postprocessors = [SegMaskToPointHeatmap(), GaussianModulation(sigma=GAUSSIAN_MOD_SIGMA),
-                      PointHeatmapBlobDetector(ignore_index=CELL_CLASSES.index('Background')),
+                      PointHeatmapBlobDetector(
+                          ignore_index=CELL_CLASSES.index('Background')),
                       PointNMS(euc_dist_threshold=15)]
 
     # Set up parameters for model training
@@ -196,10 +197,12 @@ def main():
     optimiser = AdamW(params=model.parameters(), lr=args.initial_lr)
 
     # Set up scheduler
-    scheduler = PolynomialLRDecay(optimiser=optimiser, max_epoch=num_epochs, power=1.0, min_lr=0)
+    scheduler = PolynomialLRDecay(
+        optimiser=optimiser, max_epoch=num_epochs, power=1.0, min_lr=0)
 
     # Set up object for computing loss
-    criterion_object = PointHeatmapMSELoss(ignore_class='Background', class_list=CELL_CLASSES)
+    criterion_object = PointHeatmapMSELoss(
+        ignore_class='Background', class_list=CELL_CLASSES)
 
     # Set up object for metric computation
     metrics_object = PointDetMetrics(
@@ -209,9 +212,11 @@ def main():
     # Set up output directory and create logger for metrics
     create_directory(args.output_directory)
     print(f'Writing all data to: {args.output_directory}')
-    train_log = CSVLogger(os.path.join(args.output_directory, 'train_log.csv'), overwrite=True)
+    train_log = CSVLogger(os.path.join(
+        args.output_directory, 'train_log.csv'), overwrite=True)
     if val_dataloader is not None:
-        val_log = CSVLogger(os.path.join(args.output_directory, 'val_log.csv'), overwrite=True)
+        val_log = CSVLogger(os.path.join(
+            args.output_directory, 'val_log.csv'), overwrite=True)
     else:
         val_log = None
 

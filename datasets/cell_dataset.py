@@ -124,14 +124,17 @@ class CellDataset(OcelotDataset):
             out_size=out_size)
 
         # Load the ground truth (this also handles class mapping)
-        gt_points, gt_labels = self._load_cell_annotations(region_data, window=load_window)
+        gt_points, gt_labels = self._load_cell_annotations(
+            region_data, window=load_window)
 
         # If scaling to mpp, scale the ground truth
         if self.scale_to_mpp is not None:
             orig_mpp_x, orig_mpp_y = region_data['mpp']
             gt_points = np.stack([
-                convert_pixel_mpp(gt_points[:, 0], orig_mpp_x, self.scale_to_mpp),
-                convert_pixel_mpp(gt_points[:, 1], orig_mpp_y, self.scale_to_mpp),
+                convert_pixel_mpp(
+                    gt_points[:, 0], orig_mpp_x, self.scale_to_mpp),
+                convert_pixel_mpp(
+                    gt_points[:, 1], orig_mpp_y, self.scale_to_mpp),
             ], axis=-1)
 
         # Set up where to bound the point annotations to (based on crop_window)
@@ -139,7 +142,8 @@ class CellDataset(OcelotDataset):
         if crop_window is not None:
             bound_to_region = crop_window
         else:
-            bound_to_region = [0, 0, input_region.shape[1], input_region.shape[0]]
+            bound_to_region = [
+                0, 0, input_region.shape[1], input_region.shape[0]]
 
         # Bound the ground truth point annotations (points) to the valid region
         # Any points outside of the image area are removed
@@ -150,7 +154,8 @@ class CellDataset(OcelotDataset):
         extra_return_kwargs = {}
         extra_tx_kwargs = {}
         if self.seg_mask_dir is not None:
-            seg_mask_path = os.path.join(self.seg_mask_dir, f'{region_data["id"]}_ca_hm.tif')
+            seg_mask_path = os.path.join(
+                self.seg_mask_dir, f'{region_data["id"]}_ca_hm.tif')
 
             # Loaded as (H, W) - single-channel heatmap for cancer area
             seg_ground_truth, _ = load_tif_rasterio(
@@ -167,18 +172,22 @@ class CellDataset(OcelotDataset):
         transformed = self.transform(image=input_region, keypoints=gt_points, labels=gt_labels,
                                      **extra_tx_kwargs)
         input_region = transformed['image']
-        gt_points, gt_labels = np.asarray(transformed['keypoints']), np.asarray(transformed['labels'])
+        gt_points, gt_labels = np.asarray(
+            transformed['keypoints']), np.asarray(transformed['labels'])
         if self.seg_mask_dir is not None:
             seg_ground_truth = transformed['mask']
             extra_return_kwargs[INPUT_MASK_PROB_KEY] = seg_ground_truth
 
         # Handle no ground truth points (set to a [0, 2] array)
         if len(gt_points) == 0:
-            gt_points, gt_labels = np.zeros([0, 2], dtype=np.float32), np.zeros(0, dtype=np.int64)
+            gt_points, gt_labels = np.zeros(
+                [0, 2], dtype=np.float32), np.zeros(0, dtype=np.int64)
 
         # Generate the ground truth Gaussian (creates a Tensor)
-        used_mpp = (self.scale_to_mpp, self.scale_to_mpp) if self.scale_to_mpp is not None else region_data['mpp']
-        gt_point_heatmap = self.generate_gaussian(input_region, gt_points, gt_labels, mpp=used_mpp)
+        used_mpp = (self.scale_to_mpp,
+                    self.scale_to_mpp) if self.scale_to_mpp is not None else region_data['mpp']
+        gt_point_heatmap = self.generate_gaussian(
+            input_region, gt_points, gt_labels, mpp=used_mpp)
 
         # Put ground truth points/labels into torch tensor with relevant datatypes
         gt_points = torch.as_tensor(gt_points, dtype=torch.float32)
@@ -224,7 +233,8 @@ class CellDataset(OcelotDataset):
             class_idx = CELL_CLASSES.index(cell_class)
 
             # Load the point annotations
-            coords = np.load(os.path.join(self.data_directory, annotation_path))
+            coords = np.load(os.path.join(
+                self.data_directory, annotation_path))
 
             # Shift annotations based on window to be loaded
             if window is not None:
@@ -277,7 +287,8 @@ class CellDataset(OcelotDataset):
             if mpp is None:
                 raise ValueError('Requires mpp when sigma units is microns.')
             if mpp[0] != mpp[1]:
-                raise NotImplementedError(f'Must have equal MPP in x/y axis. Mpp is: {mpp}.')
+                raise NotImplementedError(
+                    f'Must have equal MPP in x/y axis. Mpp is: {mpp}.')
             sigma = self.gaussian_sigma / mpp[0]
         else:
             raise RuntimeError(f'{self.gaussian_sigma_units}')
@@ -359,7 +370,8 @@ class CellDataset(OcelotDataset):
                          self.output_crop_margin + output_width, self.output_crop_margin + output_height]
 
         # Filter out any points that don't intersect with output_coords box
-        points_intersect = [point_intersects_region(output_coords, point.numpy()) for point in gt_points]
+        points_intersect = [point_intersects_region(
+            output_coords, point.numpy()) for point in gt_points]
         gt_points = gt_points[points_intersect]
         gt_labels = gt_labels[points_intersect]
 

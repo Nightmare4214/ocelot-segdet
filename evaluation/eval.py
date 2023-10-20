@@ -1,8 +1,10 @@
 import json
 import re
+import os
 import numpy as np
 
-### These are fixed, don't change!
+
+# These are fixed, don't change!
 DISTANCE_CUTOFF = 15
 CLS_IDX_TO_NAME = {1: "BC", 2: "TC"}
 
@@ -26,7 +28,8 @@ def _check_validity(inp):
         assert type(cell["point"][0]) is int and 0 <= cell["point"][0] <= 1023
         assert type(cell["point"][1]) is int and 0 <= cell["point"][1] <= 1023
         assert type(cell["point"][2]) is int and cell["point"][2] in (1, 2)
-        assert type(cell["probability"]) is float and 0.0 <= cell["probability"] <= 1.0
+        assert type(cell["probability"]
+                    ) is float and 0.0 <= cell["probability"] <= 1.0
 
 
 def _convert_format(pred_json, gt_json, num_images):
@@ -81,6 +84,58 @@ def _convert_format(pred_json, gt_json, num_images):
     return pred_after_convert, gt_after_convert
 
 
+def _convert_format2(pred_json, gt_json, num_images):
+    """ Helper function that converts the format for easy score computation.
+
+    Parameters
+    ----------
+    pred_json: List[Dict]
+        List of cell predictions, each element corresponds a cell point.
+        Each element is a dictionary with 3 keys, `name`, `point`, `probability`.
+        Value of `name` key is `image_{idx}` where `idx` indicates the image index.
+        Value of `point` key is a list of three elements, x, y, and cls.
+        Value of `probability` key is a confidence score of a predicted cell.
+
+    gt_json: List[Dict]
+        List of cell ground-truths, each element corresponds a cell point.
+        Each element is a dictionary with 3 keys, `name`, `point`, `probability`.
+        Value of `name` key is `image_{idx}` where `idx` indicates the image index.
+        Value of `point` key is a list of three elements, x, y, and cls.
+        Value of `probability` key is always 1.0.
+
+    num_images: int
+        Number of images.
+
+    Returns
+    -------
+    pred_after_convert: List[List[Tuple(int, int, int, float)]]
+        List of predictions, each element corresponds a patch.
+        Each patch contains list of tuples, each element corresponds a single cell.
+        Each predicted cell consist of x, y, cls, prob.
+
+    gt_after_convert: List[List[Tuple(int, int, int, float)]]
+        List of GT, each element corresponds a patch.
+        Each patch contains list of tuples, each element corresponds a single cell.
+        Each GT cell consist of x, y, cls, prob (always 1.0).
+    """
+
+    pred_after_convert = [[] for _ in range(num_images)]
+    for pred_cell in pred_json:
+        x, y, c = pred_cell["point"]
+        prob = pred_cell["probability"]
+        img_idx = int(pred_cell["name"].split("_")[-1])
+        pred_after_convert[img_idx].append((x, y, 1, prob))
+
+    gt_after_convert = [[] for _ in range(num_images)]
+    for gt_cell in gt_json:
+        x, y, c = gt_cell["point"]
+        prob = gt_cell["probability"]
+        img_idx = int(gt_cell["name"].split("_")[-1])
+        gt_after_convert[img_idx].append((x, y, 1, prob))
+
+    return pred_after_convert, gt_after_convert
+
+
 def _preprocess_distance_and_confidence(pred_all, gt_all):
     """ Preprocess distance and confidence used for F1 calculation.
 
@@ -108,7 +163,57 @@ def _preprocess_distance_and_confidence(pred_all, gt_all):
         one_sample_result = {}
 
         for cls_idx in sorted(list(CLS_IDX_TO_NAME.keys())):
-            pred_cls = np.array([p for p in pred if p[2] == cls_idx], np.float32)
+            pred_cls = np.array(
+                [p for p in pred if p[2] == cls_idx], np.float32)
+            gt_cls = np.array([g for g in gt if g[2] == cls_idx], np.float32)
+            if len(gt_cls) == 0:
+                gt_cls = np.zeros(shape=(0, 4))
+
+            if len(pred_cls) == 0:
+                distance = np.zeros([0, len(gt_cls)])
+                confidence = np.zeros([0, len(gt_cls)])
+            else:
+                pred_loc = pred_cls[:, :2].reshape([-1, 1, 2])
+                gt_loc = gt_cls[:, :2].reshape([1, -1, 2])
+                distance = np.linalg.norm(pred_loc - gt_loc, axis=2)
+                confidence = pred_cls[:, 3]
+
+            one_sample_result[cls_idx] = (distance, confidence)
+
+        all_sample_result.append(one_sample_result)
+
+    return all_sample_result
+
+
+def _preprocess_distance_and_confidence2(pred_all, gt_all):
+    """ Preprocess distance and confidence used for F1 calculation.
+
+    Parameters
+    ----------
+    pred_all: List[List[Tuple(int, int, int, float)]]
+        List of predictions, each element corresponds a patch.
+        Each patch contains list of tuples, each element corresponds a single cell.
+        Each predicted cell consist of x, y, cls, prob.
+
+    gt_all: List[List[Tuple(int, int, int)]]
+        List of GTs, each element corresponds a patch.
+        Each patch contains list of tuples, each element corresponds a single cell.
+        Each GT cell consist of x, y, cls.
+
+    Returns
+    -------
+    all_sample_result: List[List[Tuple(int, np.array, np.array)]]
+        Distance (between pred and GT) and Confidence per class and sample.
+    """
+
+    all_sample_result = []
+
+    for pred, gt in zip(pred_all, gt_all):
+        one_sample_result = {}
+
+        for cls_idx in [1]:
+            pred_cls = np.array(
+                [p for p in pred if p[2] == cls_idx], np.float32)
             gt_cls = np.array([g for g in gt if g[2] == cls_idx], np.float32)
             if len(gt_cls) == 0:
                 gt_cls = np.zeros(shape=(0, 4))
@@ -130,7 +235,7 @@ def _preprocess_distance_and_confidence(pred_all, gt_all):
 
 
 def _calc_scores(all_sample_result, cls_idx, cutoff):
-    """ Calculate Precision, Recall, and F1 scores for given class
+    """ Calculate Precision, Recall, and F1 scores for given class 
 
     Parameters
     ----------
@@ -141,7 +246,7 @@ def _calc_scores(all_sample_result, cls_idx, cutoff):
         1 or 2, where 1 and 2 corresponds Tumor (TC) and Background (BC) cells, respectively.
 
     cutoff: int
-        Distance cutoff that used as a threshold for collecting candidates of
+        Distance cutoff that used as a threshold for collecting candidates of 
         matching ground-truths per each predicted cell.
 
     Returns
@@ -175,7 +280,8 @@ def _calc_scores(all_sample_result, cls_idx, cutoff):
             if len(gt_neighbors) == 0:  # No matching GT --> False Positive
                 num_fp += 1
             else:  # Assign neares GT --> True Positive
-                gt_idx = min(gt_neighbors, key=lambda gt_idx: distance[pred_idx, gt_idx])
+                gt_idx = min(
+                    gt_neighbors, key=lambda gt_idx: distance[pred_idx, gt_idx])
                 num_tp += 1
                 bool_mask[:, gt_idx] = False
 
@@ -191,7 +297,7 @@ def _calc_scores(all_sample_result, cls_idx, cutoff):
     return round(precision, 4), round(recall, 4), round(f1, 4)
 
 
-def main():
+def evaluate(algorithm_output_path=None, gt_path=None, method='test', ignore_class=False, mask=False):
     """ Calculate mF1 score and save scores.
 
     Returns
@@ -201,41 +307,72 @@ def main():
     """
 
     # Path where algorithm output is stored
-    algorithm_output_path = "cell_classification.json"
+    if not algorithm_output_path or not os.path.exists(algorithm_output_path):
+        algorithm_output_path = f"../{method}/output/cell_classification.json"
     with open(algorithm_output_path, "r") as f:
         pred_json = json.load(f)["points"]
 
     # Path where GT is stored
-    gt_path = "cell_gt.json"
+    if not gt_path or not os.path.exists(gt_path):
+        _curr_path = os.path.split(__file__)[0]
+        if mask:
+            gt_path = os.path.join(_curr_path, f"cell_gt_{method}_mask.json")
+        else:
+            gt_path = os.path.join(_curr_path, f"cell_gt_{method}.json")
     with open(gt_path, "r") as f:
-        json_data = json.load(f)
-        gt_json = json_data["points"]
-        num_images = json_data["num_images"]
+        temp = json.load(f)
+        gt_json = temp["points"]
+        num_images = temp["num_images"]
 
     # Check the validity (e.g. type) of algorithm output
     _check_validity(pred_json)
     _check_validity(gt_json)
 
-    # Convert the format of GT and pred for easy score computation
-    pred_all, gt_all = _convert_format(pred_json, gt_json, num_images)
-
-    # For each sample, get distance and confidence by comparing prediction and GT
-    all_sample_result = _preprocess_distance_and_confidence(pred_all, gt_all)
-
-    # Calculate scores of each class, then get final mF1 score
     scores = {}
-    for cls_idx, cls_name in CLS_IDX_TO_NAME.items():
-        precision, recall, f1 = _calc_scores(all_sample_result, cls_idx, DISTANCE_CUTOFF)
-        scores[f"Pre/{cls_name}"] = precision
-        scores[f"Rec/{cls_name}"] = recall
-        scores[f"F1/{cls_name}"] = f1
 
-    scores["mF1"] = sum([
-        scores[f"F1/{cls_name}"] for cls_name in CLS_IDX_TO_NAME.values()
-    ]) / len(CLS_IDX_TO_NAME)
+    if not ignore_class:
+        # Convert the format of GT and pred for easy score computation
+        pred_all, gt_all = _convert_format(pred_json, gt_json, num_images)
 
-    print(scores)
+        # For each sample, get distance and confidence by comparing prediction and GT
+        all_sample_result = _preprocess_distance_and_confidence(
+            pred_all, gt_all)
+
+        # Calculate scores of each class, then get final mF1 score
+
+        for cls_idx, cls_name in CLS_IDX_TO_NAME.items():
+            precision, recall, f1 = _calc_scores(
+                all_sample_result, cls_idx, DISTANCE_CUTOFF)
+            scores[f"Pre/{cls_name}"] = precision
+            scores[f"Rec/{cls_name}"] = recall
+            scores[f"F1/{cls_name}"] = f1
+        scores["mF1"] = sum(
+            [scores[f"F1/{cls_name}"] for cls_name in CLS_IDX_TO_NAME.values()]) / len(CLS_IDX_TO_NAME)
+    else:
+        # Convert the format of GT and pred for easy score computation
+        pred_all, gt_all = _convert_format2(pred_json, gt_json, num_images)
+
+        # For each sample, get distance and confidence by comparing prediction and GT
+        all_sample_result = _preprocess_distance_and_confidence2(
+            pred_all, gt_all)
+
+        precision, recall, f1 = _calc_scores(
+            all_sample_result, 1, DISTANCE_CUTOFF)
+        scores[f"Pre"] = precision
+        scores[f"Rec"] = recall
+        scores[f"F1"] = f1
+
+    # print(scores)
+    return scores
+
+
+def main():
+    evaluate()
 
 
 if __name__ == '__main__':
-    main()
+    # my_test_path = '/home/icml007/Nightmare4214/PyTorch_model/ocelot/max_epoch_500_lr_0.0001_scheduler_poly_batch_size_5_no_aug_False_trainer_CellClasslessUotTrainer_blur_0.01_cost_p_norm_scale_0.6_p_norm_2_norm_coord_1_phi_kl_rho_1_lr_lbfgs_1_model_vgg_scaling_0.5_p_1_rho2_None_reg_entropy_1002-014525/test_cell_classification.json'
+    # evaluate(my_test_path, None, 'test', ignore_class=True, mask=False)
+    # main()
+    print(evaluate('/home/icml007/PycharmProjects/ocelot-segdet/test/output/test_cell_classification.json', method='test'))
+    print(evaluate('/home/icml007/PycharmProjects/ocelot-segdet/test/output/val_cell_classification.json', method='val'))

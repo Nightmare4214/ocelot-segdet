@@ -44,7 +44,8 @@ class DataLoader:
         self.as_tif = True  # By default, data stored in the stacked TIF file
 
         # Existing GC case:
-        cell_fpath = [os.path.join(cell_path, f) for f in os.listdir(cell_path) if ".tif" in f]
+        cell_fpath = [os.path.join(cell_path, f)
+                      for f in os.listdir(cell_path) if ".tif" in f]
         tissue_fpath = [os.path.join(tissue_path, f) for f in os.listdir(tissue_path) if
                         ".tif" in f]
         if len(cell_fpath) == 0 and len(tissue_fpath) == 0:
@@ -86,7 +87,7 @@ class DataLoader:
             # Ensure they are paired based on name
             for cfp, tfp in zip(self.cell_filepaths, self.tissue_filepaths):
                 assert os.path.splitext(os.path.basename(cfp))[0] == \
-                       os.path.splitext(os.path.basename(tfp))[0]
+                    os.path.splitext(os.path.basename(tfp))[0]
 
             self.num_images = len(cell_fpath)
 
@@ -100,14 +101,16 @@ class DataLoader:
             # Read patch pair and the corresponding id
             if self.as_tif:
                 cell_patch = self.cell_patches[
-                             self.cur_idx * SAMPLE_SHAPE[0]:(self.cur_idx + 1) * SAMPLE_SHAPE[0], :,
-                             :]
+                    self.cur_idx * SAMPLE_SHAPE[0]:(self.cur_idx + 1) * SAMPLE_SHAPE[0], :,
+                    :]
                 tissue_patch = self.tissue_patches[
-                               self.cur_idx * SAMPLE_SHAPE[0]:(self.cur_idx + 1) * SAMPLE_SHAPE[0],
-                               :, :]
+                    self.cur_idx * SAMPLE_SHAPE[0]:(self.cur_idx + 1) * SAMPLE_SHAPE[0],
+                    :, :]
             else:
-                cell_patch = np.array(Image.open(self.cell_filepaths[self.cur_idx]))
-                tissue_patch = np.array(Image.open(self.tissue_filepaths[self.cur_idx]))
+                cell_patch = np.array(Image.open(
+                    self.cell_filepaths[self.cur_idx]))
+                tissue_patch = np.array(Image.open(
+                    self.tissue_filepaths[self.cur_idx]))
 
             pair_id = self.cur_idx
 
@@ -193,7 +196,7 @@ class DetectionWriter:
         - NOTE: that this will fail if not cells are predicted
         """
         assert len(self._data["points"]) > 0, "No cells were predicted"
+        os.makedirs(os.path.dirname(self._output_path), exist_ok=True)
         with open(self._output_path, "w", encoding="utf-8") as f:
             json.dump(self._data, f, ensure_ascii=False, indent=4)
         print(f"Predictions were saved at `{self._output_path}`")
-

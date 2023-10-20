@@ -21,6 +21,7 @@ from util.constants import (
 class PointDetMetrics:
     """Computes point-based detection metrics.
     """
+
     def __init__(
             self,
             micron_thresholds: Sequence[float] = (3, ),
@@ -62,14 +63,18 @@ class PointDetMetrics:
         # Validate the ignore class
         if ignore_class is not None:
             if self.class_list is None:
-                raise ValueError('Ignore class is specified without the class list')
+                raise ValueError(
+                    'Ignore class is specified without the class list')
             if len(self.class_list) == 1:
-                raise ValueError('Cannot ignore a class if only 1 class exists in the class list.')
+                raise ValueError(
+                    'Cannot ignore a class if only 1 class exists in the class list.')
             if ignore_class not in self.class_list:
-                raise ValueError(f'Class \'{ignore_class}\' not found in the class list.')
+                raise ValueError(
+                    f'Class \'{ignore_class}\' not found in the class list.')
 
         # Set up the ignore_index
-        self.ignore_index = -1 if ignore_class is None else self.class_list.index(ignore_class)
+        self.ignore_index = - \
+            1 if ignore_class is None else self.class_list.index(ignore_class)
 
         # Stores for ground truth and predictions
         self.ground_truths = []
@@ -135,13 +140,15 @@ class PointDetMetrics:
             # Given we are using the raphaelpadilla library, we create boxes with 0 width/height
             self.ground_truths.extend([
                 BoundingBox(image_name=str(self.sample_idx), class_id=per_pt_gt_ind,
-                            coordinates=tuple([*per_pt_gt_coord, *per_pt_gt_coord]),
+                            coordinates=tuple(
+                                [*per_pt_gt_coord, *per_pt_gt_coord]),
                             bb_type=BBType.GROUND_TRUTH, format=BBFormat.XYX2Y2, img_mpp=img_mpp)
                 for per_pt_gt_ind, per_pt_gt_coord in zip(gt_ind, gt_pt) if per_pt_gt_ind != self.ignore_index
             ])
             self.predictions.extend([
                 BoundingBox(image_name=str(self.sample_idx), class_id=per_pt_out_ind,
-                            coordinates=tuple([*per_pt_out_coord, *per_pt_out_coord]),
+                            coordinates=tuple(
+                                [*per_pt_out_coord, *per_pt_out_coord]),
                             confidence=per_pt_out_conf, bb_type=BBType.DETECTED,
                             format=BBFormat.XYX2Y2, img_mpp=img_mpp)
                 for per_pt_out_ind, per_pt_out_coord, per_pt_out_conf in zip(
@@ -179,7 +186,8 @@ class PointDetMetrics:
             # Extract the MPP of the image associated to each ground truth point
             # Currently only a single MPP across all images is supported
             # If there are no ground truth points, find the MPP from a predicted point
-            image_mpps = {tuple(pt.img_mpp) for pt in chain(self.ground_truths, self.predictions)}
+            image_mpps = {tuple(pt.img_mpp) for pt in chain(
+                self.ground_truths, self.predictions)}
             if len(image_mpps) != 1:
                 raise NotImplementedError(
                     f'Finding Euclidean distance based on microns when different images have '
@@ -201,7 +209,8 @@ class PointDetMetrics:
 
             # ##################################### TP/FP data #####################################
             if self.compute_conf_mat_info:
-                metrics.update(self.get_conf_mat_info(coco_metrics, f'Euclidean {threshold_str}'))
+                metrics.update(self.get_conf_mat_info(
+                    coco_metrics, f'Euclidean {threshold_str}'))
 
         # Return computed metrics
         return metrics
@@ -243,9 +252,12 @@ class PointDetMetrics:
             num_positives = 0 if NP is None else NP
 
             # Compute precision/recall/f1 at the current threshold for this class
-            precis = TP / (TP + FP + 1e-10) if TP is not None and FP is not None else None
-            recall = TP / (TP + FN + 1e-10) if TP is not None and FN is not None else None
-            f1 = (2 * precis * recall) / (precis + recall + 1e-10) if precis is not None and recall is not None else None
+            precis = TP / \
+                (TP + FP + 1e-10) if TP is not None and FP is not None else None
+            recall = TP / \
+                (TP + FN + 1e-10) if TP is not None and FN is not None else None
+            f1 = (2 * precis * recall) / (precis + recall +
+                                          1e-10) if precis is not None and recall is not None else None
 
             # Update dictionary with statistics
             extracted_metrics[f'TP {metric_str} {class_name}'] = TP
@@ -269,7 +281,8 @@ class PointDetMetrics:
             [r for r in all_recall if r is not None]).item()
         extracted_metrics[f'F1 {metric_str} macro'] = np.mean(
             [f for f in all_f1 if f is not None]).item()
-        extracted_metrics[f'Num Positives {metric_str} macro'] = np.sum(all_np).item()
+        extracted_metrics[f'Num Positives {metric_str} macro'] = np.sum(
+            all_np).item()
 
         return extracted_metrics
 

@@ -25,6 +25,7 @@ from networks.metrics.rafaelpadilla.general_utils import convert_to_absolute_val
 
 class BoundingBox:
     """ Class representing a bounding box. """
+
     def __init__(self,
                  image_name,
                  class_id=None,
@@ -249,7 +250,8 @@ class BoundingBox:
         return (self._width_img, self._height_img)
 
     def get_area(self):
-        assert isclose(self._w * self._h, (self._x2 - self._x) * (self._y2 - self._y))
+        assert isclose(self._w * self._h, (self._x2 - self._x)
+                       * (self._y2 - self._y))
         assert (self._x2 > self._x)
         assert (self._y2 > self._y)
         return (self._x2 - self._x + 1) * (self._y2 - self._y + 1)
@@ -401,9 +403,11 @@ class BoundingBox:
         classes = list(set([bb._class_id for bb in bounding_boxes]))
         ret = {}
         for c in classes:
-            ret[c] = len(BoundingBox.get_bounding_box_by_class(bounding_boxes, c))
+            ret[c] = len(
+                BoundingBox.get_bounding_box_by_class(bounding_boxes, c))
         # Sort dictionary by the amount of bounding boxes
-        ret = {k: v for k, v in sorted(ret.items(), key=lambda item: item[1], reverse=reverse)}
+        ret = {k: v for k, v in sorted(
+            ret.items(), key=lambda item: item[1], reverse=reverse)}
         return ret
 
     @staticmethod

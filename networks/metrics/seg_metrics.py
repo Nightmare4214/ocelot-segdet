@@ -8,6 +8,7 @@ from util.constants import SEG_MASK_INT_KEY, GT_SEG_MASK_KEY
 class SegMetrics:
     """Computes common segmentation and classification metrics.
     """
+
     def __init__(
             self,
             class_list: List[str],
@@ -50,11 +51,13 @@ class SegMetrics:
 
         # Ensure at least 1 average method is specified
         if not any((IoU_avg, F1_avg, recall_avg, accuracy_avg, precision_avg, specificity_avg)):
-            raise ValueError('Please specify at least one type of average to compute')
+            raise ValueError(
+                'Please specify at least one type of average to compute')
 
         self.class_list = class_list
         if ignore_class is not None and self.class_list is None:
-            raise ValueError('Ignore class is specified without the class list')
+            raise ValueError(
+                'Ignore class is specified without the class list')
 
         # Set up the ignore_index
         if ignore_class is None:
@@ -143,7 +146,8 @@ class SegMetrics:
         metric_dict = {}
         for (metric_name, avg_method, metric_object) in self.all_metrics_objects:
             value = metric_object.compute().cpu().numpy()
-            metric_dict.update(self._create_metric_dict(avg_method, metric_name, value))
+            metric_dict.update(self._create_metric_dict(
+                avg_method, metric_name, value))
         return metric_dict
 
     def _create_metric_dict(self, avg_method, metric_name, value):
@@ -165,7 +169,8 @@ class SegMetrics:
             for i, class_name in enumerate(self.class_list):
                 # Code to handle per-class metrics
                 if i != self.ignore_index:
-                    metric_return_dict[f'{metric_name} {class_name}'] = value[i - index_adjustment]
+                    metric_return_dict[f'{metric_name} {class_name}'] = value[i -
+                                                                              index_adjustment]
                 elif metric_name == 'IoU':
                     index_adjustment = 1
         else:
@@ -204,7 +209,8 @@ class SegMetrics:
             if avg_method == 'perclass':
                 parameter_avg_method = 'none'
             elif avg_method not in {'macro', 'micro'}:
-                raise ValueError(f'Invalid {metric_name} averaging method specified')
+                raise ValueError(
+                    f'Invalid {metric_name} averaging method specified')
             metric_objects.append((metric_name, avg_method, metric_class(
                 num_classes=num_classes, average=parameter_avg_method, ignore_index=ignore_index,
                 mdmc_average='global')))

@@ -30,7 +30,8 @@ class SegFormer(nn.Module):
         super().__init__()
 
         # Instantiate the model
-        self.model = getattr(segformer.model, f'segformer_{size}')(pretrained=pretrained, num_classes=num_classes)
+        self.model = getattr(segformer.model, f'segformer_{size}')(
+            pretrained=pretrained, num_classes=num_classes)
 
         # If passing in a mask with input, modify input layer
         self.input_with_mask = input_with_mask
@@ -87,7 +88,8 @@ class SegFormer(nn.Module):
         margin = self.train_output_crop_margin if self.training else self.eval_output_crop_margin
         if margin is not None and margin > 0:
             height, width = calculate_cropped_size(output.shape[-2:], margin)
-            output = F.crop(output, top=margin, left=margin, height=height, width=width)
+            output = F.crop(output, top=margin, left=margin,
+                            height=height, width=width)
 
         return {SEG_MASK_LOGITS_KEY: output}
 
@@ -130,7 +132,8 @@ class SegFormer(nn.Module):
                              f'{outputs[0].keys()}')
 
         # Create a list of sorted indices by coord_list
-        sorted_idxs = [i[0] for i in sorted(enumerate(coord_list), key=lambda x: x[1])]
+        sorted_idxs = [i[0]
+                       for i in sorted(enumerate(coord_list), key=lambda x: x[1])]
 
         # Store for the collated output
         collated_output = {}
@@ -150,14 +153,16 @@ class SegFormer(nn.Module):
                     mask_shape = (mask_h, mask_w)
                     mask_default_value = background_idx
                 else:
-                    raise ValueError(f'Key {seg_key} not supported to collate into mask.')
+                    raise ValueError(
+                        f'Key {seg_key} not supported to collate into mask.')
 
                 # Create a mask to collate into
                 if mask_is_tensor:
                     seg_mask = mask_default_value * torch.ones(mask_shape, dtype=mask_dtype,
                                                                device=outputs[0][seg_key].device)
                 else:
-                    seg_mask = mask_default_value * np.ones(mask_shape, dtype=mask_dtype)
+                    seg_mask = mask_default_value * \
+                        np.ones(mask_shape, dtype=mask_dtype)
 
                 # If a mask of segmentation logits, set them to 1 for the background class
                 if seg_key == SEG_MASK_LOGITS_KEY:
@@ -175,7 +180,8 @@ class SegFormer(nn.Module):
                     elif seg_key == SEG_MASK_INT_KEY:
                         output_h, output_w = output[seg_key].shape
                     else:
-                        raise ValueError(f'Key {seg_key} not supported to collate into mask.')
+                        raise ValueError(
+                            f'Key {seg_key} not supported to collate into mask.')
 
                     # Handle any negative coordinates, or coordinates beyond final_dimensions
                     x1_off = 0 if coord[0] >= 0 else -coord[0]
@@ -184,6 +190,7 @@ class SegFormer(nn.Module):
                     y2_off = 0 if coord[3] <= mask_h else coord[3] - mask_h
 
                     collated_output[seg_key][..., coord[1] + y1_off:coord[3] - y2_off,
-                    coord[0] + x1_off:coord[2] - x2_off] = \
-                        output[seg_key][..., y1_off: output_h - y2_off, x1_off:output_w - x2_off]
+                                             coord[0] + x1_off:coord[2] - x2_off] = \
+                        output[seg_key][..., y1_off: output_h -
+                                        y2_off, x1_off:output_w - x2_off]
         return collated_output

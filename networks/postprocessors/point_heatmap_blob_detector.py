@@ -64,7 +64,8 @@ class PointHeatmapBlobDetector(Postprocessor):
 
         for param_key, param_val in update_params.items():
             if not hasattr(params, param_key):
-                raise AttributeError(f'Key \'{param_key}\' not supported by blob detector.')
+                raise AttributeError(
+                    f'Key \'{param_key}\' not supported by blob detector.')
             setattr(params, param_key, param_val)
 
         self.detector = cv2.SimpleBlobDetector_create(params)
@@ -85,7 +86,8 @@ class PointHeatmapBlobDetector(Postprocessor):
             new_outputs[DET_SCORES_KEY] = []
 
             for batch_heatmap in outputs[POINT_HEATMAP_KEY]:
-                points, indices, scores = self.detect_points_in_heatmap(batch_heatmap)
+                points, indices, scores = self.detect_points_in_heatmap(
+                    batch_heatmap)
 
                 # Append to the outputs
                 new_outputs[DET_POINTS_KEY].append(points)
@@ -107,7 +109,8 @@ class PointHeatmapBlobDetector(Postprocessor):
         Returns the detected points, class indices and scores, sorted in descending order by score.
         """
         if heatmap.ndim != 3:
-            raise RuntimeError(f'Heatmap should have 3 dimensions. Has: {heatmap.ndim}')
+            raise RuntimeError(
+                f'Heatmap should have 3 dimensions. Has: {heatmap.ndim}')
 
         points, indices, scores = [], [], []
         for cls_idx, cls_heatmap in enumerate(heatmap):
@@ -133,7 +136,8 @@ class PointHeatmapBlobDetector(Postprocessor):
             scores.append(torch.as_tensor(hm_scores))
 
         # Collect into single tensors
-        points, indices, scores = torch.cat(points, dim=0), torch.cat(indices, dim=0), torch.cat(scores, dim=0)
+        points, indices, scores = torch.cat(points, dim=0), torch.cat(
+            indices, dim=0), torch.cat(scores, dim=0)
 
         # Sort by scores in descending order
         scores, sorted_indices = torch.sort(scores, descending=True)

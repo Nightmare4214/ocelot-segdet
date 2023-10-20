@@ -107,7 +107,8 @@ def get_slices(img_shp, window):
     # Calculate crop slice positions
     crop_low = np.clip(0 - start, a_min=0, a_max=window_shp)
     crop_high = window_shp - np.clip(end - img_shp, a_min=0, a_max=window_shp)
-    crop_slices = tuple(slice(low, high) for low, high in zip(crop_low, crop_high))
+    crop_slices = tuple(slice(low, high)
+                        for low, high in zip(crop_low, crop_high))
     # Calculate img slice positions
     start = np.clip(start, a_min=0, a_max=img_shp)
     end = np.clip(end, a_min=0, a_max=img_shp)
@@ -262,7 +263,8 @@ class RandomAffineCrop(A.DualTransform):
         self.scale_centre = scale_centre
         self.rotate_centre = rotate_centre
         if bbox_rotate_method not in {'largest_box', 'ellipse'}:
-            raise ValueError(f'Bounding box rotation method {self.method} is not valid.')
+            raise ValueError(
+                f'Bounding box rotation method {self.method} is not valid.')
         self.bbox_rotate_method = bbox_rotate_method
 
         self.disable_smart_loading()
@@ -335,7 +337,8 @@ class RandomAffineCrop(A.DualTransform):
         window = self.get_crop_bounds(M)
 
         # Fix the M matrix
-        self_transform_reset_params = {'_frozen_M': None, '_frozen_window': None}
+        self_transform_reset_params = {
+            '_frozen_M': None, '_frozen_window': None}
         self._frozen_M = M
         self._frozen_window = window
 
@@ -369,11 +372,13 @@ class RandomAffineCrop(A.DualTransform):
         # In practice, for large images, this is very unlikely to occur more than once
         for i in range(100):
             params = self.get_params()
-            M = get_pixel_transform(self.crop_size, img_size=image_size, **params)
+            M = get_pixel_transform(
+                self.crop_size, img_size=image_size, **params)
             if self.check_sample_inside(M, image_size):
                 return params
 
-        raise Exception('Could\'t spatial params for crop within image. Check image and crop sizes')
+        raise Exception(
+            'Could\'t spatial params for crop within image. Check image and crop sizes')
 
     def check_sample_inside(self, M, image_size):
         """ Returns true if this will spatial wholly within the image """
@@ -450,7 +455,8 @@ class RandomAffineCrop(A.DualTransform):
             pylo = ylo * rows
             pxhi = xhi * cols
             pyhi = yhi * rows
-            initial_corners = [(pxlo, pylo), (pxhi, pylo), (pxlo, pyhi), (pxhi, pyhi)]
+            initial_corners = [(pxlo, pylo), (pxhi, pylo),
+                               (pxlo, pyhi), (pxhi, pyhi)]
         elif self.bbox_rotate_method == 'ellipse':
             w, h = (xhi - xlo) / 2, (yhi - ylo) / 2
             data = np.arange(0, 360, dtype=np.float32)

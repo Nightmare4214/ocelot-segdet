@@ -8,6 +8,7 @@ import torch
 
 class MeanValueMeter:
     """A meter for calculating the mean and standard deviation of values."""
+
     def __init__(self):
         self.n = 0
         self.sum = 0
@@ -33,7 +34,8 @@ class MeanValueMeter:
         if self.n == 1:
             self.stddev = np.inf
         else:
-            variance = (self.sum_of_squares - self.n * self.mean ** 2) / (self.n - 1)
+            variance = (self.sum_of_squares - self.n *
+                        self.mean ** 2) / (self.n - 1)
             self.stddev = sqrt(max(variance, 0))
 
     def get_mean(self):

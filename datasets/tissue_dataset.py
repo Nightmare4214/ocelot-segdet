@@ -67,7 +67,8 @@ class TissueDataset(OcelotDataset):
         # Crop the ground truth mask if output_crop_margin is defined
         margin = self.output_crop_margin
         if margin is not None:
-            height, width = calculate_cropped_size(example[GT_SEG_MASK_KEY].shape[-2:], margin)
+            height, width = calculate_cropped_size(
+                example[GT_SEG_MASK_KEY].shape[-2:], margin)
             example[GT_SEG_MASK_KEY] = F.crop(example[GT_SEG_MASK_KEY],
                                               top=margin, left=margin, height=height, width=width)
 
@@ -89,7 +90,8 @@ class TissueDataset(OcelotDataset):
             out_size=out_size)
 
         # Load the ground truth
-        load_fill_value = TISSUE_CLASSES.index(self.pad_class_name)  # Fill value to use for out of bounds pixels when reading the mask
+        # Fill value to use for out of bounds pixels when reading the mask
+        load_fill_value = TISSUE_CLASSES.index(self.pad_class_name)
         ground_truth, _ = load_tif_rasterio(
             os.path.join(self.data_directory, region_data['gt_path']), window=load_window,
             out_size=out_size, resampling='nearest', fill_value=load_fill_value)
@@ -110,11 +112,13 @@ class TissueDataset(OcelotDataset):
             if self.pad_class_name is None:
                 raise RuntimeError('Padding was introduced while loading and transforming data, '
                                    'but pad_class_name is not specified.')
-            ground_truth[pad_indices] = TISSUE_CLASSES.index(self.pad_class_name) + 1
+            ground_truth[pad_indices] = TISSUE_CLASSES.index(
+                self.pad_class_name) + 1
         ground_truth -= 1
 
         # Return data, along with some other useful metadata
-        used_mpp = (self.scale_to_mpp, self.scale_to_mpp) if self.scale_to_mpp is not None else region_data['mpp']
+        used_mpp = (self.scale_to_mpp,
+                    self.scale_to_mpp) if self.scale_to_mpp is not None else region_data['mpp']
 
         return {
             'id': region_data['id'],

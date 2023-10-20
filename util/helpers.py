@@ -124,7 +124,8 @@ def get_recursive_directory_listing(
     # Handle a search depth of 0 (simple os.listdir())
     if search_depth == 0:
         if filename_start_filter is None:
-            file_list = [os.path.join(directory, file) for file in os.listdir(directory)]
+            file_list = [os.path.join(directory, file)
+                         for file in os.listdir(directory)]
         else:
             file_list = [os.path.join(directory, file) for file in os.listdir(directory)
                          if file.startswith(filename_start_filter)]
@@ -215,9 +216,11 @@ def calculate_cropped_size(
     """
     if crop_margin is None:
         return input_size
-    output_size = (input_size[0] - crop_margin * 2, input_size[1] - crop_margin * 2)
+    output_size = (input_size[0] - crop_margin * 2,
+                   input_size[1] - crop_margin * 2)
     if any(x < 0 for x in output_size):
-        raise ValueError(f'Crop margin {crop_margin} is too large for the input size {input_size}')
+        raise ValueError(
+            f'Crop margin {crop_margin} is too large for the input size {input_size}')
     return output_size
 
 
@@ -263,11 +266,13 @@ def convert_dimensions_to_mpp(dimensions: Sequence[float], from_mpp: Union[float
         to_mpp = [to_mpp, to_mpp]
 
     converted_dims = np.asarray([
-        convert_pixel_mpp(dimensions[0], from_mpp[0], to_mpp[0], round_int=round_int),
+        convert_pixel_mpp(dimensions[0], from_mpp[0],
+                          to_mpp[0], round_int=round_int),
         convert_pixel_mpp(dimensions[1], from_mpp[1], to_mpp[1], round_int=round_int)])
     if round_int and validate_round:
         converted_dims_no_round = np.asarray([
-            convert_pixel_mpp(dimensions[0], from_mpp[0], to_mpp[0], round_int=False),
+            convert_pixel_mpp(
+                dimensions[0], from_mpp[0], to_mpp[0], round_int=False),
             convert_pixel_mpp(dimensions[1], from_mpp[1], to_mpp[1], round_int=False)])
 
         if np.sum(np.abs(converted_dims - converted_dims_no_round)) != 0:
@@ -303,10 +308,14 @@ def convert_coordinates_to_mpp(coordinates, original_mpp, new_mpp, round_int=Fal
     coordinates = coordinates.copy()
 
     # Perform the conversion
-    coordinates[0] = convert_pixel_mpp(coordinates[0], original_mpp[0], new_mpp[0], round_int=round_int)
-    coordinates[1] = convert_pixel_mpp(coordinates[1], original_mpp[1], new_mpp[1], round_int=round_int)
-    coordinates[2] = convert_pixel_mpp(coordinates[2], original_mpp[0], new_mpp[0], round_int=round_int)
-    coordinates[3] = convert_pixel_mpp(coordinates[3], original_mpp[1], new_mpp[1], round_int=round_int)
+    coordinates[0] = convert_pixel_mpp(
+        coordinates[0], original_mpp[0], new_mpp[0], round_int=round_int)
+    coordinates[1] = convert_pixel_mpp(
+        coordinates[1], original_mpp[1], new_mpp[1], round_int=round_int)
+    coordinates[2] = convert_pixel_mpp(
+        coordinates[2], original_mpp[0], new_mpp[0], round_int=round_int)
+    coordinates[3] = convert_pixel_mpp(
+        coordinates[3], original_mpp[1], new_mpp[1], round_int=round_int)
 
     # Return the converted coordinates
     return coordinates
@@ -350,7 +359,8 @@ def get_windowed_load_crop(image_shape, window):
     window_width, window_height = window[2] - window[0], window[3] - window[1]
     crop_x1 = np.clip(0 - window[0], a_min=0, a_max=window_width).item()
     crop_y1 = np.clip(0 - window[1], a_min=0, a_max=window_height).item()
-    crop_x2 = window_width - np.clip(window[2] - image_shape[0], a_min=0, a_max=window_width).item()
+    crop_x2 = window_width - \
+        np.clip(window[2] - image_shape[0], a_min=0, a_max=window_width).item()
     crop_y2 = window_height - np.clip(window[3] - image_shape[1], a_min=0,
                                       a_max=window_height).item()
     return max(0, crop_x1), max(0, crop_y1), max(0, crop_x2), max(0, crop_y2)

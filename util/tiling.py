@@ -42,17 +42,20 @@ def generate_tiles(coordinates, tile_size, output_size):
     if isinstance(output_size, int):
         output_size = (output_size, output_size)
 
-    height_output_offsets, width_output_offsets = compute_tile_offsets_2D(coordinates, output_size)
+    height_output_offsets, width_output_offsets = compute_tile_offsets_2D(
+        coordinates, output_size)
 
     # If the output size is larger than the width/height
     # Force the tile coordinate to centre the tile about the coordinates
     #   In other words, generate negative padding
     if len(height_output_offsets) == 1 and height_output_offsets[0] == 0 and (
             coordinates[3] - coordinates[1]) < output_size[1]:
-        height_output_offsets[0] = -(output_size[1] - (coordinates[3] - coordinates[1])) // 2
+        height_output_offsets[0] = -(output_size[1] -
+                                     (coordinates[3] - coordinates[1])) // 2
     if len(width_output_offsets) == 1 and width_output_offsets[0] == 0 and (
             coordinates[2] - coordinates[0]) < output_size[0]:
-        width_output_offsets[0] = -(output_size[0] - (coordinates[2] - coordinates[0])) // 2
+        width_output_offsets[0] = -(output_size[0] -
+                                    (coordinates[2] - coordinates[0])) // 2
 
     all_tiles = []
     for height_idx in range(len(height_output_offsets)):
@@ -97,11 +100,13 @@ def compute_tile_offsets_2D(coordinates, stride_size):
     region_height = coordinates[3] - coordinates[1]
 
     if (region_height > stride_size[0]):
-        height_output_offsets = compute_tile_offsets_1D(region_height, stride_size[0])
+        height_output_offsets = compute_tile_offsets_1D(
+            region_height, stride_size[0])
     else:
         height_output_offsets = [0]
     if (region_width > stride_size[1]):
-        width_output_offsets = compute_tile_offsets_1D(region_width, stride_size[1])
+        width_output_offsets = compute_tile_offsets_1D(
+            region_width, stride_size[1])
     else:
         width_output_offsets = [0]
 

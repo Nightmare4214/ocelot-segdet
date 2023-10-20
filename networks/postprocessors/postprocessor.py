@@ -5,6 +5,7 @@ from typing import List, Dict, Any
 class Postprocessor:
     """Base class for all other postprocessor classes.
     """
+
     def __init__(self):
         pass
 

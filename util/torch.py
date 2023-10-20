@@ -97,7 +97,8 @@ def detection_collate_fn(batch, key=None):
     This collates the INPUT_IMAGE_KEY, GT_POINT_HEATMAP_KEY, and INPUT_IMAGE_MASK_KEY as normal.
     All other keys are collated as tuples (given points/indices must be collated this way).
     """
-    _NORMAL_COLLATE_KEYS = (INPUT_IMAGE_KEY, GT_POINT_HEATMAP_KEY, INPUT_IMAGE_MASK_KEY)
+    _NORMAL_COLLATE_KEYS = (
+        INPUT_IMAGE_KEY, GT_POINT_HEATMAP_KEY, INPUT_IMAGE_MASK_KEY)
     elem = batch[0]
     if isinstance(elem, Mapping):
         return {key: detection_collate_fn([d[key] for d in batch], key=key) for key in elem}

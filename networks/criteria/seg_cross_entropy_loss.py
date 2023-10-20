@@ -9,6 +9,7 @@ from util.constants import SEG_MASK_LOGITS_KEY, GT_SEG_MASK_KEY
 class SegCrossEntropyLoss:
     """Cross entropy criterion for segmentation.
     """
+
     def __init__(
         self,
         ignore_class: Optional[str] = None,
@@ -27,7 +28,8 @@ class SegCrossEntropyLoss:
 
         self.class_list = class_list
         if ignore_class is not None and self.class_list is None:
-            raise ValueError('Ignore class is specified without the class list')
+            raise ValueError(
+                'Ignore class is specified without the class list')
 
         # Set up the class index to ignore when calculating loss.
         if ignore_class is None:
@@ -62,7 +64,8 @@ class SegCrossEntropyLoss:
                 self.weight = self.weight.to(pred_logits.device)
 
             # Calculate the cross entropy loss.
-            loss = cross_entropy(pred_logits, target, self.weight, ignore_index=self.ignore_index)
+            loss = cross_entropy(pred_logits, target,
+                                 self.weight, ignore_index=self.ignore_index)
 
         # Return the loss.
         return {'cross_entropy_loss': loss}
