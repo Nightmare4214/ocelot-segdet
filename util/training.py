@@ -149,7 +149,7 @@ def train_epoch(model, optimiser, loader, device, epoch_num, criterion_object=No
 
         # Extract required inputs for the model from the batch (and move onto device)
         model_inputs = {key: move_data_to_device(
-            batch[key], device) for key in model_input_keys}
+            batch[key], device) for key in model_input_keys}  # (8, 3, 512, 512) / (4, 4, 512, 512)
 
         # Update the store of data on the GPU
         batch_gpu_data.update(model_inputs)
@@ -158,7 +158,7 @@ def train_epoch(model, optimiser, loader, device, epoch_num, criterion_object=No
         optimiser.zero_grad()
 
         # Perform the forward pass
-        model_outputs = model.forward(model_inputs)
+        model_outputs = model.forward(model_inputs)  # (8, 3, 512, 512)
 
         # Check that we have all the model outputs required by the criterion
         criterion_keys = set(criterion_object.model_output_keys)

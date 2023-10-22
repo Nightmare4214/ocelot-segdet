@@ -250,7 +250,7 @@ def extract_store_softmasked_cancer_mask(complete_prediction, image_id, mask_mpp
     sm_seg_mask = complete_prediction[SEG_MASK_PROB_KEY].detach().cpu().numpy()
 
     # Extract the softmaxed heatmap for the 'cancer area' class. Giving (H, W)
-    cancer_area_hm = sm_seg_mask[TISSUE_CLASSES.index('Cancer')]
+    cancer_area_hm = sm_seg_mask[TISSUE_CLASSES.index('Cancer')]  # (1593, 1593) (not 1024)
 
     # Determine how to scale/crop mask to get to the cell level
     image_metadata = ocelot_metadata[image_id]
@@ -261,10 +261,10 @@ def extract_store_softmasked_cancer_mask(complete_prediction, image_id, mask_mpp
     new_w, new_h = int(round(
         cancer_area_hm.shape[1] * sf_x)), int(round(cancer_area_hm.shape[0] * sf_y))
     cancer_area_hm = cv2.resize(
-        cancer_area_hm, (new_w, new_h), interpolation=cv2.INTER_AREA)
+        cancer_area_hm, (new_w, new_h), interpolation=cv2.INTER_AREA)  # (4096, 4096)
 
     # Crop the scaled mask
-    cancer_area_hm = crop_image(cancer_area_hm, crop_info)
+    cancer_area_hm = crop_image(cancer_area_hm, crop_info) # (1024, 1024)
 
     # Ensure the mask is at the right shape
     assert cancer_area_hm.shape[0] == OUTPUT_MASK_SHAPE and cancer_area_hm.shape[1] == OUTPUT_MASK_SHAPE
