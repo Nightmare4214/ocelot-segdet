@@ -97,7 +97,7 @@ def parse_args():
 
     # Model configuration
     parser.add_argument('--segformer-size', type=str, help='Size of SegFormer model',
-                        choices=['b0', 'b1', 'b2', 'b3', 'b4', 'b5'], default=DEFAULT_SEGFORMER_SIZE)
+                        choices=['b0', 'b1', 'b2', 'b3', 'b4', 'b5', 'unet', 'deeplabv3plus'], default=DEFAULT_SEGFORMER_SIZE)
     parser.add_argument('--segformer-pretrained', action='store_true',
                         help='Use ImageNet pre-trained weights for SegFormer',
                         default=DEFAULT_SEGFORMER_PRETRAINED)

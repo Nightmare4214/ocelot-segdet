@@ -26,15 +26,20 @@ class GaussianModulation(Postprocessor):
         return [POINT_HEATMAP_KEY]
 
     def postprocess(self, outputs: Dict[str, Any]) -> Dict[str, Any]:
-        heatmap = outputs[POINT_HEATMAP_KEY]
+        heatmap = outputs[POINT_HEATMAP_KEY]  # (c, h, w)
 
         # Apply the Gaussian
         blurred_heatmap = gaussian_blur(heatmap, kernel_size=[self.kernel_size, self.kernel_size],
-                                        sigma=self.sigma)
+                                        sigma=self.sigma)  # (c, h, w)
+
+        # heatmap.max() * (min_max_norm(blurred_heatmap))
+        # scaled_heatmap = heatmap.amax(dim=[-1, -2], keepdim=True) * (
+        #     (blurred_heatmap - blurred_heatmap.amin(dim=[-1, -2], keepdim=True)) / (
+        #         blurred_heatmap.amax(dim=[-1, -2], keepdim=True) - blurred_heatmap.amin(dim=[-1, -2], keepdim=True)))
 
         # Create the scaled heatmap and initialize appropriately
-        scaled_heatmap = torch.zeros_like(blurred_heatmap)
-
+        scaled_heatmap = torch.zeros_like(blurred_heatmap)  # (c, h, w)
+        
         # Per-channel, scale the blurred heatmap back as described in the paper
         if blurred_heatmap.ndim == 4:       # Batched
             for b_idx in range(scaled_heatmap.shape[0]):

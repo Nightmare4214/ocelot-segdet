@@ -318,7 +318,7 @@ def cell_detection(
     # Collate all individual predictions into a single prediction
     complete_prediction = model.collate_outputs(
         data_store['predictions'], data_store['prediction_coords'],
-        data_store['dimensions'].tolist())
+        data_store['dimensions'].tolist()) # (3, 955, 955)
 
     # Perform any postprocessing on collated version of outputs
     if len(postprocessors) > 0:

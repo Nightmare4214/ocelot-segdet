@@ -371,6 +371,34 @@ def main():
 
 
 if __name__ == '__main__':
+    # pure segformer
+    # test: {'Pre/BC': 0.7301, 'Rec/BC': 0.6478, 'F1/BC': 0.6865, 'Pre/TC': 0.7442, 'Rec/TC': 0.7941, 'F1/TC': 0.7683, 'mF1': 0.7274}
+    # val: {'Pre/BC': 0.6531, 'Rec/BC': 0.7052, 'F1/BC': 0.6782, 'Pre/TC': 0.8248, 'Rec/TC': 0.7839, 'F1/TC': 0.8038, 'mF1': 0.741}
+    
+    # pure unet 
+    # test: {'Pre/BC': 0.6521, 'Rec/BC': 0.6741, 'F1/BC': 0.6629, 'Pre/TC': 0.7318, 'Rec/TC': 0.7409, 'F1/TC': 0.7363, 'mF1': 0.6996}
+    # val: {'Pre/BC': 0.5209, 'Rec/BC': 0.7401, 'F1/BC': 0.6115, 'Pre/TC': 0.8373, 'Rec/TC': 0.6701, 'F1/TC': 0.7444, 'mF1': 0.67795}
+
+    # segformer tissue + pure unet cell 
+    # test: {'Pre/BC': 0.69, 'Rec/BC': 0.6545, 'F1/BC': 0.6718, 'Pre/TC': 0.7373, 'Rec/TC': 0.7716, 'F1/TC': 0.7541, 'mF1': 0.71295}
+    # val: {'Pre/BC': 0.6046, 'Rec/BC': 0.7321, 'F1/BC': 0.6623, 'Pre/TC': 0.8452, 'Rec/TC': 0.7488, 'F1/TC': 0.7941, 'mF1': 0.7282}
+
+    # segformer tissue + unet cell
+    # test: {'Pre/BC': 0.6904, 'Rec/BC': 0.6554, 'F1/BC': 0.6725, 'Pre/TC': 0.7251, 'Rec/TC': 0.7778, 'F1/TC': 0.7505, 'mF1': 0.7115} 
+    # val: {'Pre/BC': 0.5862, 'Rec/BC': 0.7355, 'F1/BC': 0.6524, 'Pre/TC': 0.8346, 'Rec/TC': 0.7562, 'F1/TC': 0.7935, 'mF1': 0.72295}
+
+    # pure deeplabv3plus
+    # test: {'Pre/BC': 0.6988, 'Rec/BC': 0.6752, 'F1/BC': 0.6868, 'Pre/TC': 0.7559, 'Rec/TC': 0.7413, 'F1/TC': 0.7485, 'mF1': 0.71765}
+    # val: {'Pre/BC': 0.5924, 'Rec/BC': 0.7008, 'F1/BC': 0.6421, 'Pre/TC': 0.8297, 'Rec/TC': 0.7071, 'F1/TC': 0.7635, 'mF1': 0.7028}
+
+    # segformer tissue + pure unet cell 
+    # test: {'Pre/BC': 0.6995, 'Rec/BC': 0.6314, 'F1/BC': 0.6637, 'Pre/TC': 0.7292, 'Rec/TC': 0.7493, 'F1/TC': 0.7391, 'mF1': 0.7014}
+    # val: {'Pre/BC': 0.6022, 'Rec/BC': 0.6949, 'F1/BC': 0.6452, 'Pre/TC': 0.8231, 'Rec/TC': 0.7158, 'F1/TC': 0.7657, 'mF1': 0.70545}
+
+    # segformer tissue + unet cell
+    # test: {'Pre/BC': 0.7201, 'Rec/BC': 0.5987, 'F1/BC': 0.6538, 'Pre/TC': 0.7419, 'Rec/TC': 0.747, 'F1/TC': 0.7444, 'mF1': 0.6991}
+    # val: {'Pre/BC': 0.6056, 'Rec/BC': 0.6596, 'F1/BC': 0.6315, 'Pre/TC': 0.8413, 'Rec/TC': 0.7094, 'F1/TC': 0.7697, 'mF1': 0.7006}
+
     # my_test_path = '/home/icml007/Nightmare4214/PyTorch_model/ocelot/max_epoch_500_lr_0.0001_scheduler_poly_batch_size_5_no_aug_False_trainer_CellClasslessUotTrainer_blur_0.01_cost_p_norm_scale_0.6_p_norm_2_norm_coord_1_phi_kl_rho_1_lr_lbfgs_1_model_vgg_scaling_0.5_p_1_rho2_None_reg_entropy_1002-014525/test_cell_classification.json'
     # evaluate(my_test_path, None, 'test', ignore_class=True, mask=False)
     # main()

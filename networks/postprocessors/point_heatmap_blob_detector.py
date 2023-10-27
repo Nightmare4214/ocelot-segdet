@@ -94,6 +94,7 @@ class PointHeatmapBlobDetector(Postprocessor):
                 new_outputs[DET_INDICES_KEY].append(indices)
                 new_outputs[DET_SCORES_KEY].append(scores)
         else:
+            # (point_num, 2), classes(point_num), (point_num)
             new_outputs[DET_POINTS_KEY], new_outputs[DET_INDICES_KEY], new_outputs[DET_SCORES_KEY] = \
                 self.detect_points_in_heatmap(outputs[POINT_HEATMAP_KEY])
 

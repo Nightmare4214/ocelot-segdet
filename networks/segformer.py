@@ -5,6 +5,8 @@ import segformer.model
 import torch
 from torch import nn
 from torchvision.transforms import functional as F
+import segmentation_models_pytorch as smp
+from networks.unet import UNet
 
 from util.constants import (
     INPUT_IMAGE_MASK_KEY, INPUT_IMAGE_KEY, SEG_MASK_LOGITS_KEY, SEG_MASK_INT_KEY)
@@ -29,29 +31,49 @@ class SegFormer(nn.Module):
         """
         super().__init__()
 
-        # Instantiate the model
-        self.model = getattr(segformer.model, f'segformer_{size}')(
-            pretrained=pretrained, num_classes=num_classes)
-
         # If passing in a mask with input, modify input layer
         self.input_with_mask = input_with_mask
-        if self.input_with_mask:
-            # Get number of channels in mask
-            self.mask_channels = mask_channels
 
-            # Get reference to existing layer
-            input_layer = self.model.backbone.stages[0].patch_embed.proj
+        if size.lower() == 'unet'.lower():
+            if self.input_with_mask:
+                self.model = UNet(n_channels=4, n_classes=num_classes)
+            else:
+                self.model = UNet(n_channels=3, n_classes=num_classes)
+        elif size.lower() == 'deeplabv3plus'.lower():
+            if self.input_with_mask:
+                self.model = smp.DeepLabV3Plus(
+                    encoder_name='resnet34', encoder_weights='imagenet',
+                    in_channels=4, classes=num_classes,
+                    activation=None)
+            else:
+                self.model = smp.DeepLabV3Plus(
+                    encoder_name='resnet34', encoder_weights='imagenet',
+                    in_channels=3, classes=num_classes,
+                    activation=None)
 
-            # Create new layer, copy weights where applicable (input channels = 3 (RGB) + mask channels)
-            new_input_layer = nn.Conv2d(
-                3 + self.mask_channels, input_layer.out_channels,
-                kernel_size=input_layer.kernel_size, stride=input_layer.stride,
-                padding=input_layer.padding)
-            new_input_layer.weight.data[:, :3, ...] = input_layer.weight.data
-            new_input_layer.bias.data[:] = input_layer.bias.data
+        else:
+            # Instantiate the model
+            self.model = getattr(segformer.model, f'segformer_{size}')(
+                pretrained=pretrained, num_classes=num_classes)
 
-            # Update the model layer
-            self.model.backbone.stages[0].patch_embed.proj = new_input_layer
+            if self.input_with_mask:
+                # Get number of channels in mask
+                self.mask_channels = mask_channels
+
+                # Get reference to existing layer
+                input_layer = self.model.backbone.stages[0].patch_embed.proj
+
+                # Create new layer, copy weights where applicable (input channels = 3 (RGB) + mask channels)
+                new_input_layer = nn.Conv2d(
+                    3 + self.mask_channels, input_layer.out_channels,
+                    kernel_size=input_layer.kernel_size, stride=input_layer.stride,
+                    padding=input_layer.padding)
+                new_input_layer.weight.data[:,
+                                            :3, ...] = input_layer.weight.data
+                new_input_layer.bias.data[:] = input_layer.bias.data
+
+                # Update the model layer
+                self.model.backbone.stages[0].patch_embed.proj = new_input_layer
 
         # Store output crop margin (for training and eval)
         self.train_output_crop_margin = train_output_crop_margin

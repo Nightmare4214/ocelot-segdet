@@ -103,7 +103,7 @@ def cell_scale_crop_in_tissue_at_cell_mpp(
         tissue_mpp = get_region_mpp(meta_pair, 'tissue')
     else:
         if isinstance(tissue_mpp, (int, float)):
-            tissue_mpp = (tissue_mpp, tissue_mpp)
+            tissue_mpp = (tissue_mpp, tissue_mpp) # (0.5, 0.5)
     wsi_mpp = get_wsi_mpp(meta_pair)
 
     # Determine the scaling between mask at tissue MPP vs. cell MPP (make larger)

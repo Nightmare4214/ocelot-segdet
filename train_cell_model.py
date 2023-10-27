@@ -113,7 +113,7 @@ def parse_args():
 
     # Model configuration
     parser.add_argument('--segformer-size', type=str, help='Size of SegFormer model',
-                        choices=['b0', 'b1', 'b2', 'b3', 'b4', 'b5'], default=DEFAULT_SEGFORMER_SIZE)
+                        choices=['b0', 'b1', 'b2', 'b3', 'b4', 'b5', 'unet', 'deeplabv3plus'], default=DEFAULT_SEGFORMER_SIZE)
     parser.add_argument('--segformer-pretrained', action='store_true',
                         help='Use ImageNet pre-trained weights for SegFormer',
                         default=DEFAULT_SEGFORMER_PRETRAINED)
@@ -160,7 +160,7 @@ def main():
         seg_mask_dir=args.cancer_area_heatmap_directory)
     train_dataloader = DataLoader(
         train_dataset, batch_size=args.batch_size, shuffle=True, sampler=None,
-        num_workers=args.num_workers, collate_fn=detection_collate_fn, drop_last=False)
+        num_workers=args.num_workers, collate_fn=detection_collate_fn, drop_last=True)
 
     if os.path.isfile(os.path.join(args.split_directory, 'val.txt')):
         val_transforms = None

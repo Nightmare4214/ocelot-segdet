@@ -60,7 +60,7 @@ def parse_args():
     parser.add_argument('--weights-path', type=str,
                         help='Path to trained tissue segmentation model weights.', required=True)
     parser.add_argument('--segformer-size', type=str, help='Size of SegFormer model',
-                        choices=['b0', 'b1', 'b2', 'b3', 'b4', 'b5'],
+                        choices=['b0', 'b1', 'b2', 'b3', 'b4', 'b5', 'unet', 'deeplabv3plus'],
                         default=DEFAULT_SEGFORMER_SIZE)
 
     # Inference configuration
