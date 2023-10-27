@@ -374,7 +374,7 @@ if __name__ == '__main__':
     # pure segformer
     # test: {'Pre/BC': 0.7301, 'Rec/BC': 0.6478, 'F1/BC': 0.6865, 'Pre/TC': 0.7442, 'Rec/TC': 0.7941, 'F1/TC': 0.7683, 'mF1': 0.7274}
     # val: {'Pre/BC': 0.6531, 'Rec/BC': 0.7052, 'F1/BC': 0.6782, 'Pre/TC': 0.8248, 'Rec/TC': 0.7839, 'F1/TC': 0.8038, 'mF1': 0.741}
-    
+
     # pure unet 
     # test: {'Pre/BC': 0.6521, 'Rec/BC': 0.6741, 'F1/BC': 0.6629, 'Pre/TC': 0.7318, 'Rec/TC': 0.7409, 'F1/TC': 0.7363, 'mF1': 0.6996}
     # val: {'Pre/BC': 0.5209, 'Rec/BC': 0.7401, 'F1/BC': 0.6115, 'Pre/TC': 0.8373, 'Rec/TC': 0.6701, 'F1/TC': 0.7444, 'mF1': 0.67795}
@@ -404,3 +404,9 @@ if __name__ == '__main__':
     # main()
     print(evaluate('/home/icml007/PycharmProjects/ocelot-segdet/test/output/test_cell_classification.json', method='test'))
     print(evaluate('/home/icml007/PycharmProjects/ocelot-segdet/test/output/val_cell_classification.json', method='val'))
+    
+    # with mask
+    # test: {'Pre': 0.8773, 'Rec': 0.8069, 'F1': 0.8407}
+    # val: {'Pre': 0.8984, 'Rec': 0.7938, 'F1': 0.8429}
+    # print(evaluate('/home/icml007/PycharmProjects/ocelot-segdet/test/output/test_cell_mask_classification.json', method='test', ignore_class=True, mask=True))
+    # print(evaluate('/home/icml007/PycharmProjects/ocelot-segdet/test/output/val_cell_mask_classification.json', method='val', ignore_class=True, mask=True))

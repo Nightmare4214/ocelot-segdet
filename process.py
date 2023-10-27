@@ -47,4 +47,4 @@ def process(subset='test'):
 
 
 if __name__ == "__main__":
-    process('val')
+    process('test')

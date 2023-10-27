@@ -18,7 +18,7 @@ from networks.postprocessors.seg_softmax import SegSoftmax
 from networks.segformer import SegFormer
 from util.constants import (
     INPUT_IMAGE_KEY, INPUT_IMAGE_MASK_KEY, SEG_MASK_PROB_KEY, DET_POINTS_KEY, DET_INDICES_KEY,
-    DET_SCORES_KEY)
+    DET_SCORES_KEY, GC_CELL_FPATH, GC_TISSUE_FPATH)
 from util.helpers import calculate_cropped_size, convert_dimensions_to_mpp, scale_coords_to_mpp
 from util.image import precompute_macenko_params, crop_image
 from util.ocelot_parsing import get_region_mpp, cell_scale_crop_in_tissue_at_cell_mpp
@@ -142,7 +142,7 @@ class Model():
 
         # Extract the cancer area channel from the tissue mask
         tissue_mask = tissue_mask[[TISSUE_MASK_CANCER_AREA_IDX], ...]
-
+        
         # Determine where the cell patch is relative to the tissue mask
         (sf_x, sf_y), tissue_cell_crop_coords = cell_scale_crop_in_tissue_at_cell_mpp(
             meta_pair, tissue_mpp=TISSUE_MODEL_MPP, cell_mpp=CELL_MODEL_MPP)
@@ -155,17 +155,26 @@ class Model():
         tissue_mask_cell = np.transpose(tissue_mask, (1, 2, 0))
         tissue_mask_cell = cv2.resize(
             tissue_mask_cell, (new_width, new_height), interpolation=cv2.INTER_AREA)
+        
         # cv2 resize will drop channel dimension. Here we add it back in to get (H, W, C)
         tissue_mask_cell = np.expand_dims(tissue_mask_cell, axis=2)
         tissue_mask_cell = crop_image(tissue_mask_cell, tissue_cell_crop_coords)
         tissue_mask_cell = np.transpose(tissue_mask_cell, (2, 0, 1))
+        
+        annotation = None
+        # annotation = cv2.imread(os.path.join(str(GC_TISSUE_FPATH).replace('images', 'annotations'), f'{pair_id}.png'), 0)
+        # annotation = cv2.resize(
+        #     annotation, (new_width, new_height), interpolation=cv2.INTER_NEAREST)
+        # annotation = np.expand_dims(annotation, axis=2)
+        # annotation = crop_image(annotation, tissue_cell_crop_coords)
+        # annotation = np.transpose(annotation, (2, 0, 1))
 
         # Note: Given way model trained, will return 1 = BG cell, 2 = TC
         cell_coords, cell_indices, cell_scores = cell_detection(
             cell_patch, cell_mpp, self.cell_det_model, postprocessors=CELL_POSTPROCESSORS,
             req_mpp=CELL_MODEL_MPP, tile_size=TILE_SIZE, crop_margin=CELL_MODEL_OCM,
             macenko_params=cell_macenko_params, batch_size=CELL_MODEL_BATCH_SIZE,
-            num_workers=NUM_WORKERS, device=self.device, input_seg_mask=tissue_mask_cell)
+            num_workers=NUM_WORKERS, device=self.device, input_seg_mask=tissue_mask_cell, annotation=annotation)
 
         # Scale cell coordinates back to the cell image MPP
         if len(cell_coords) > 0:
@@ -259,7 +268,7 @@ def cell_detection(
         image: NDArray[np.uint8], image_mpp: Tuple[float, float], model: nn.Module,
         postprocessors: List[Postprocessor], req_mpp: float, tile_size: Tuple[int, int],
         crop_margin: int, macenko_params: Dict[str, Any], batch_size: int, num_workers: int,
-        device: torch.device, input_seg_mask: Optional[NDArray[np.uint8]] = None,
+        device: torch.device, input_seg_mask: Optional[NDArray[np.uint8]] = None, annotation=None
 ) -> Union[Tuple[NDArray[np.float32], NDArray[np.int32], NDArray[np.float32]], NDArray[np.float32]]:
     """Performs cell detection (via segmentation) on an image.
 
@@ -319,7 +328,10 @@ def cell_detection(
     complete_prediction = model.collate_outputs(
         data_store['predictions'], data_store['prediction_coords'],
         data_store['dimensions'].tolist()) # (3, 955, 955)
-
+    if annotation is not None:
+        if (annotation == 2).sum() == 0:
+            return np.array([]), np.array([]), np.array([])
+        complete_prediction['seg_mask_logits'] *= (annotation == 2)
     # Perform any postprocessing on collated version of outputs
     if len(postprocessors) > 0:
         complete_prediction = postprocess_outputs(complete_prediction, postprocessors)
